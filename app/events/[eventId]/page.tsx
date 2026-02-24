@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { Header } from "@/src/components/Header";
 import { EventHero } from "@/src/components/event-detail/EventHero";
+import { MatchupInsights } from "@/src/components/event-detail/MatchupInsights";
 import { EVBadge } from "@/src/components/EVBadge";
 import { ArbBadge } from "@/src/components/ArbBadge";
 import { OddsCell } from "@/src/components/OddsCell";
@@ -86,6 +87,13 @@ export default function EventDetailPage() {
           <>
             {/* Event Hero Header */}
             <EventHero event={eventOdds} />
+
+            {/* Standings + Predictions + Summary cards */}
+            <MatchupInsights
+              event={eventOdds}
+              valueBets={eventValueBets}
+              arbBets={eventArbBets}
+            />
 
             {/* Market consensus predictions */}
             {(() => {

@@ -11,8 +11,6 @@ import { SPORTS } from "@/src/lib/odds-api/constants";
 import { TeamLogo } from "@/src/components/TeamLogo";
 import { LeagueLogo } from "@/src/components/LeagueLogo";
 import { LiveBadge } from "@/src/components/LiveBadge";
-import { Skeleton } from "@/src/components/Skeleton";
-import { useTeamInfo } from "@/src/lib/hooks/use-team-info";
 
 interface EventHeroProps {
   event: ConsolidatedOddsEvent;
@@ -64,10 +62,6 @@ export function EventHero({ event }: EventHeroProps) {
   const leagueDisplay = sport?.displayName ?? leagueSlug;
 
   const startTime = getStartTime(event.event);
-
-  // ESPN team info (record + standing)
-  const awayInfo = useTeamInfo(leagueSlug, away);
-  const homeInfo = useTeamInfo(leagueSlug, home);
 
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -168,34 +162,6 @@ export function EventHero({ event }: EventHeroProps) {
               <p className="text-lg font-extrabold leading-tight tracking-tight text-text-primary sm:text-2xl">
                 {awayNickname}
               </p>
-              {/* Current Standing block */}
-              {(awayInfo.isLoading || awayInfo.record || awayInfo.standing) && (
-                <div className="mt-3 flex flex-col items-center gap-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary/70 sm:text-[11px]">
-                    Current Standing
-                  </span>
-                  {awayInfo.isLoading ? (
-                    <div className="flex flex-col items-center gap-1">
-                      <Skeleton className="h-3.5 w-20 rounded" />
-                      <Skeleton className="h-3 w-16 rounded" />
-                    </div>
-                  ) : (
-                    <>
-                      {awayInfo.record && (
-                        <p className="text-xs tabular-nums text-text-secondary sm:text-sm">
-                          <span className="text-text-tertiary">Record: </span>
-                          <span className="font-semibold text-text-primary">{awayInfo.record}</span>
-                        </p>
-                      )}
-                      {awayInfo.standing && (
-                        <p className="text-[11px] text-text-tertiary sm:text-xs">
-                          {awayInfo.standing}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
             </div>
           </div>
 
@@ -241,34 +207,6 @@ export function EventHero({ event }: EventHeroProps) {
               <p className="text-lg font-extrabold leading-tight tracking-tight text-text-primary sm:text-2xl">
                 {homeNickname}
               </p>
-              {/* Current Standing block */}
-              {(homeInfo.isLoading || homeInfo.record || homeInfo.standing) && (
-                <div className="mt-3 flex flex-col items-center gap-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary/70 sm:text-[11px]">
-                    Current Standing
-                  </span>
-                  {homeInfo.isLoading ? (
-                    <div className="flex flex-col items-center gap-1">
-                      <Skeleton className="h-3.5 w-20 rounded" />
-                      <Skeleton className="h-3 w-16 rounded" />
-                    </div>
-                  ) : (
-                    <>
-                      {homeInfo.record && (
-                        <p className="text-xs tabular-nums text-text-secondary sm:text-sm">
-                          <span className="text-text-tertiary">Record: </span>
-                          <span className="font-semibold text-text-primary">{homeInfo.record}</span>
-                        </p>
-                      )}
-                      {homeInfo.standing && (
-                        <p className="text-[11px] text-text-tertiary sm:text-xs">
-                          {homeInfo.standing}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>
