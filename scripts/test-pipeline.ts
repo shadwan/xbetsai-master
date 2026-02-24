@@ -4,10 +4,9 @@
 // Run: npx tsx scripts/test-pipeline.ts
 // ---------------------------------------------------------------------------
 
-import { config } from "dotenv";
-config({ path: ".env.local" });
+// Set API key before any imports that read process.env
+process.env.ODDS_API_KEY = "0329515460138b3fe9904d756c5167b08f647c1d4afede36eacb195e76119960";
 
-// Need to resolve @/ aliases — tsx respects tsconfig paths
 import { initSSE } from "../src/lib/realtime/sse-manager";
 import {
   connectWebSocket,
