@@ -18,7 +18,7 @@ interface LineChartProps {
   eventId: string;
 }
 
-const NEON_COLORS = ["#00e5ff", "#b388ff", "#39ff14", "#ffd600", "#ff3b5c"];
+const NEON_COLORS = ["#F1E185", "#b388ff", "#39ff14", "#ffd600", "#ff3b5c"];
 
 export function LineChart({ eventId }: LineChartProps) {
   const { data, isLoading, isError } = useHistorical(eventId);

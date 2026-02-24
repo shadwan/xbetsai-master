@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { SSEIndicator } from "./SSEIndicator";
 
 export function Header() {
@@ -8,19 +9,25 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-border bg-base/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Link href="/" className="font-mono text-lg font-bold text-neon-cyan">
-            xBetsAI
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/logo_dark.svg"
+              alt="xBetsAI"
+              width={120}
+              height={24}
+              className="h-5 w-auto"
+            />
           </Link>
           <nav className="flex items-center gap-4">
             <Link
               href="/"
-              className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+              className="text-sm text-text-secondary hover:text-neon-cyan transition-colors"
             >
               Dashboard
             </Link>
             <Link
               href="/opportunities"
-              className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+              className="text-sm text-text-secondary hover:text-neon-cyan transition-colors"
             >
               Opportunities
             </Link>
