@@ -8,7 +8,7 @@ import { getTeamParts } from "@/src/lib/utils/team-abbrevs";
 import { computeMarketConsensus } from "@/src/lib/utils/predictions";
 import { MotionIcon } from "motion-icons-react";
 import { LiveBadge } from "./LiveBadge";
-import { PredictionBar } from "./PredictionBar";
+import { Crown } from "lucide-react";
 import { TeamLogo } from "./TeamLogo";
 
 interface EventCardProps {
@@ -62,15 +62,22 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
   const { label: dateLabel, sublabel, time } = formatDateLine(getStartTime(event.event));
   const consensus = useMemo(() => computeMarketConsensus(event), [event]);
 
+  const favorite = useMemo(() => {
+    if (!consensus) return null;
+    if (consensus.away.probability > consensus.home.probability) return "away" as const;
+    if (consensus.home.probability > consensus.away.probability) return "home" as const;
+    return null;
+  }, [consensus]);
+
   return (
     <div className={cn(
       "group relative overflow-hidden rounded-2xl border transition-all duration-300",
       "bg-[#0d1520] hover:shadow-[0_0_40px_rgba(241,225,133,0.06)]",
       hasArb
-        ? "border-neon-yellow/30 hover:border-neon-yellow/50"
+        ? "border-neon-yellow/30 hover:border-[#F1E185]/50"
         : hasEdge
-          ? "border-neon-green/25 hover:border-neon-green/40"
-          : "border-[#1e2d3d] hover:border-[#2a4055]",
+          ? "border-neon-green/25 hover:border-[#F1E185]/50"
+          : "border-[#1e2d3d] hover:border-[#F1E185]/40",
     )}>
       {/* Background watermark logos */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -82,6 +89,15 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
         </div>
         {/* Radial overlay to fade edges */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#0d1520_75%)]" />
+        {/* Gold overlay on favorite side — visible on hover */}
+        {favorite && (
+          <div className={cn(
+            "absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100",
+            favorite === "away"
+              ? "bg-gradient-to-r from-[#F1E185]/[0.12] via-[#F1E185]/[0.03] to-transparent"
+              : "bg-gradient-to-l from-[#F1E185]/[0.12] via-[#F1E185]/[0.03] to-transparent",
+          )} />
+        )}
       </div>
 
       {/* Content */}
@@ -137,7 +153,31 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
         )}>
           {/* Away team */}
           <div className="flex flex-col items-center gap-2.5 min-w-0 flex-1">
-            <TeamLogo league={leagueSlug} teamName={away} size={60} />
+            <div className="relative">
+              {/* Crown + percentage above logo — horizontal */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                {favorite === "away" && (
+                  <Crown
+                    size={12}
+                    className="text-[#F1E185] drop-shadow-[0_0_4px_rgba(241,225,133,0.6)] shrink-0"
+                    fill="rgba(241,225,133,0.3)"
+                    strokeWidth={2.5}
+                    aria-label="Predicted favorite"
+                  />
+                )}
+                {consensus && (
+                  <span className={cn(
+                    "text-[11px] font-black tabular-nums leading-none whitespace-nowrap",
+                    favorite === "away"
+                      ? "text-[#F1E185] drop-shadow-[0_0_6px_rgba(241,225,133,0.5)]"
+                      : "text-text-tertiary",
+                  )}>
+                    {Math.round(consensus.away.probability * 100)}%
+                  </span>
+                )}
+              </div>
+              <TeamLogo league={leagueSlug} teamName={away} size={60} />
+            </div>
             <div className="text-center">
               <p className="text-[11px] font-semibold text-text-secondary leading-tight">
                 {awayParts.location}
@@ -149,15 +189,45 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
           </div>
 
           {/* VS divider */}
-          <div className="flex shrink-0 items-center justify-center mx-3">
+          <div className="flex shrink-0 flex-col items-center justify-center mx-3 gap-1">
             <span className="text-lg font-black tracking-wider text-neon-gold/60">
               VS
             </span>
+            {/* Win probability label — appears on hover */}
+            {consensus && (
+              <span className="text-[8px] font-bold uppercase tracking-widest text-white/60 text-center leading-tight opacity-0 transition-opacity duration-300 group-hover:opacity-100 whitespace-nowrap">
+                Win Probability<br />Market Consensus
+              </span>
+            )}
           </div>
 
           {/* Home team */}
           <div className="flex flex-col items-center gap-2.5 min-w-0 flex-1">
-            <TeamLogo league={leagueSlug} teamName={home} size={60} />
+            <div className="relative">
+              {/* Crown + percentage above logo — horizontal */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                {favorite === "home" && (
+                  <Crown
+                    size={12}
+                    className="text-[#F1E185] drop-shadow-[0_0_4px_rgba(241,225,133,0.6)] shrink-0"
+                    fill="rgba(241,225,133,0.3)"
+                    strokeWidth={2.5}
+                    aria-label="Predicted favorite"
+                  />
+                )}
+                {consensus && (
+                  <span className={cn(
+                    "text-[11px] font-black tabular-nums leading-none whitespace-nowrap",
+                    favorite === "home"
+                      ? "text-[#F1E185] drop-shadow-[0_0_6px_rgba(241,225,133,0.5)]"
+                      : "text-text-tertiary",
+                  )}>
+                    {Math.round(consensus.home.probability * 100)}%
+                  </span>
+                )}
+              </div>
+              <TeamLogo league={leagueSlug} teamName={home} size={60} />
+            </div>
             <div className="text-center">
               <p className="text-[11px] font-semibold text-text-secondary leading-tight">
                 {homeParts.location}
@@ -168,11 +238,6 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
             </div>
           </div>
         </div>
-
-        {/* Market consensus prediction bar */}
-        {consensus && (
-          <PredictionBar consensus={consensus} className="px-5 pb-3" />
-        )}
 
         {/* Bottom accent line */}
         <div className={cn(

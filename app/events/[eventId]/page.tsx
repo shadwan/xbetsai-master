@@ -159,7 +159,7 @@ export default function EventDetailPage() {
                       </span>
                       <span className="font-semibold text-text-primary">{consensus.home.name}</span>
                     </div>
-                    <PredictionBar consensus={consensus} />
+                    <PredictionBar consensus={consensus} className="max-w-sm mx-auto" />
 
                     {/* Per-bookmaker breakdown */}
                     {breakdown.length > 0 && (
