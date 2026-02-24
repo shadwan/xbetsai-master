@@ -130,11 +130,15 @@ function getUpcoming24hAndLiveEvents(): Event[] {
     if (!cached) continue;
 
     for (const e of cached) {
-      if (e.status === "live") {
+      // API returns status as "live"/"pending"/"settled" — handle both SDK and API shapes
+      const status = e.status as string | undefined;
+      if (status === "live") {
         events.push(e);
-      } else if (e.status !== "finished") {
-        const start = new Date(e.startTime).getTime();
-        if (start <= in24h && start >= now) {
+      } else if (status !== "finished" && status !== "settled") {
+        // API may return `date` instead of `startTime`
+        const dateStr = e.startTime || (e as unknown as { date: string }).date;
+        const start = new Date(dateStr).getTime();
+        if (!isNaN(start) && start <= in24h && start >= now) {
           events.push(e);
         }
       }
@@ -196,11 +200,52 @@ async function fetchAllEvents(): Promise<void> {
   }
 }
 
+/**
+ * Store odds from the multi-event API response into cache.
+ * The API returns objects like:
+ * { id, home, away, date, status, sport, league, urls: { Bet365: "..." }, bookmakers: { Bet365: WsMarket[] } }
+ */
+function storeMultiEventOdds(results: unknown[]): void {
+  for (const item of results) {
+    const raw = item as Record<string, unknown>;
+    const eventId = String(raw.id);
+    const urls = (raw.urls ?? {}) as Record<string, string>;
+    const bookmakers = raw.bookmakers as Record<string, WsMarket[]> | undefined;
+
+    // Handle SDK-typed EventOdds (has markets array) or raw API shape (has bookmakers object)
+    if (raw.markets && Array.isArray(raw.markets)) {
+      // SDK EventOdds shape
+      const perBookie = transformOddsToCache(raw as unknown as EventOdds);
+      for (const [bookie, data] of perBookie) {
+        cache.set(`odds:${raw.eventId || eventId}:${bookie}`, data, CACHE_TTL.ODDS_REST, "rest");
+      }
+    } else if (bookmakers && typeof bookmakers === 'object') {
+      // Raw API shape: bookmakers is { BookieName: WsMarket[] }
+      for (const [bookie, markets] of Object.entries(bookmakers)) {
+        if (!Array.isArray(markets)) continue;
+        cache.set(
+          `odds:${eventId}:${bookie}`,
+          { url: urls[bookie] ?? "", markets },
+          CACHE_TTL.ODDS_REST,
+          "rest",
+        );
+      }
+    } else {
+      continue;
+    }
+
+    const consolidated = cache.getConsolidatedEvent(eventId);
+    if (consolidated) {
+      emit("odds:updated", consolidated);
+    }
+  }
+}
+
 /** 3. Initial odds snapshot for live + next-24h events. */
 async function fetchInitialOdds(eventIds?: string[]): Promise<void> {
   const events = eventIds
     ? eventIds
-    : getUpcoming24hAndLiveEvents().map((e) => e.id);
+    : getUpcoming24hAndLiveEvents().map((e) => String(e.id));
 
   if (events.length === 0) return;
 
@@ -219,23 +264,8 @@ async function fetchInitialOdds(eventIds?: string[]): Promise<void> {
         bookmakers: BOOKMAKERS_PARAM,
       });
 
-      for (const eventOdds of results) {
-        const perBookie = transformOddsToCache(eventOdds);
-
-        for (const [bookie, data] of perBookie) {
-          cache.set(
-            `odds:${eventOdds.eventId}:${bookie}`,
-            data,
-            CACHE_TTL.ODDS_WS,
-            "rest",
-          );
-        }
-
-        const consolidated = cache.getConsolidatedEvent(eventOdds.eventId);
-        if (consolidated) {
-          emit("odds:updated", consolidated);
-        }
-      }
+      const oddsArray = Array.isArray(results) ? results : [results];
+      storeMultiEventOdds(oddsArray);
     } catch (err) {
       console.warn("[poller] Failed to fetch odds batch:", (err as Error).message);
     }
@@ -383,23 +413,8 @@ function pollOddsFallback(): void {
           bookmakers: BOOKMAKERS_PARAM,
         });
 
-        for (const eventOdds of results) {
-          const perBookie = transformOddsToCache(eventOdds);
-
-          for (const [bookie, data] of perBookie) {
-            cache.set(
-              `odds:${eventOdds.eventId}:${bookie}`,
-              data,
-              CACHE_TTL.ODDS_WS,
-              "rest",
-            );
-          }
-
-          const consolidated = cache.getConsolidatedEvent(eventOdds.eventId);
-          if (consolidated) {
-            emit("odds:updated", consolidated);
-          }
-        }
+        const oddsArr = Array.isArray(results) ? results : [results];
+        storeMultiEventOdds(oddsArr);
       } catch (err) {
         console.warn("[poller] WS fallback odds batch error:", (err as Error).message);
       }

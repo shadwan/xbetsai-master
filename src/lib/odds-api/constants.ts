@@ -62,6 +62,7 @@ export const CACHE_TTL = {
   LEAGUES: 2 * 60 * 60 * 1_000,      // 2 h  — rarely changes
   EVENTS: 5 * 60 * 1_000,            // 5 min — pre-match events refresh periodically
   ODDS_WS: 30 * 1_000,               // 30 s  — safety TTL; WS refreshes continuously
+  ODDS_REST: 5 * 60 * 1_000,          // 5 min — REST-fetched odds (initial + fallback)
   VALUE_BETS: 10 * 1_000,            // 10 s  — recalculated every 5 s by API, time-sensitive
   ARB_BETS: 10 * 1_000,              // 10 s  — same — time-sensitive
   PROPS: 30 * 1_000,                 // 30 s  — on-demand, user-triggered

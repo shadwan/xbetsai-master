@@ -10,13 +10,20 @@ import type {
   WsMarket,
 } from "@/src/lib/odds-api/types";
 
-// ── Module-scoped state (not exported) ──────────────────────────────────
+// ── Module-scoped state via globalThis (survives Turbopack re-bundling) ─
 
-const store = new Map<string, CacheEntry<unknown>>();
+interface CacheGlobal {
+  __xbets_cache_store?: Map<string, CacheEntry<unknown>>;
+  __xbets_cache_stats?: { hits: number; misses: number; wsWrites: number; restWrites: number; restUnchanged: number; pruned: number };
+  __xbets_cache_pruneId?: ReturnType<typeof setInterval> | null;
+}
 
-const stats = { hits: 0, misses: 0, wsWrites: 0, restWrites: 0, restUnchanged: 0, pruned: 0 };
+const g = globalThis as unknown as CacheGlobal;
 
-let pruneIntervalId: ReturnType<typeof setInterval> | null = null;
+const store = (g.__xbets_cache_store ??= new Map<string, CacheEntry<unknown>>());
+const stats = (g.__xbets_cache_stats ??= { hits: 0, misses: 0, wsWrites: 0, restWrites: 0, restUnchanged: 0, pruned: 0 });
+
+let pruneIntervalId: ReturnType<typeof setInterval> | null = g.__xbets_cache_pruneId ?? null;
 const PRUNE_INTERVAL_MS = 60_000;
 
 // ── Internal helpers ────────────────────────────────────────────────────
@@ -33,6 +40,7 @@ function djb2Hash(input: string): string {
 function ensurePruneInterval(): void {
   if (pruneIntervalId !== null) return;
   pruneIntervalId = setInterval(prune, PRUNE_INTERVAL_MS);
+  g.__xbets_cache_pruneId = pruneIntervalId;
   // Allow Node.js to exit even if the interval is still active
   if (typeof pruneIntervalId === "object" && "unref" in pruneIntervalId) {
     pruneIntervalId.unref();
@@ -45,7 +53,7 @@ function findEventById(eventId: string): Event | null {
     if (!key.startsWith("events:")) continue;
     if (entry.expiresAt <= now) continue;
     const events = entry.data as Event[];
-    const found = events.find((e) => e.id === eventId);
+    const found = events.find((e) => String(e.id) === String(eventId));
     if (found) return found;
   }
   return null;

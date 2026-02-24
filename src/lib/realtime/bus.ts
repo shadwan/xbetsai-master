@@ -18,10 +18,14 @@ export interface BusEvents {
   "event:deleted": { eventId: string };
 }
 
-// ── Singleton ─────────────────────────────────────────────────────────────
+// ── Singleton via globalThis (survives Turbopack re-bundling) ────────────
 
-const bus = new EventEmitter();
-bus.setMaxListeners(50);
+const g = globalThis as unknown as { __xbets_bus?: EventEmitter };
+const bus = (g.__xbets_bus ??= (() => {
+  const ee = new EventEmitter();
+  ee.setMaxListeners(50);
+  return ee;
+})());
 
 // ── Type-safe helpers ─────────────────────────────────────────────────────
 
