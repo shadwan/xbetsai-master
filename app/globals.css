@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050a0e;
+  --foreground: #e8edf2;
 }
 
 @theme inline {
@@ -10,17 +10,61 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Backgrounds */
+  --color-base: #050a0e;
+  --color-surface: #0b1219;
+  --color-elevated: #111a24;
+  --color-hover: #162030;
+
+  /* Borders */
+  --color-border: #1c2a3a;
+  --color-border-bright: #2a3f54;
+
+  /* Text */
+  --color-text-primary: #e8edf2;
+  --color-text-secondary: #8899aa;
+  --color-text-tertiary: #556677;
+
+  /* Neon accents */
+  --color-neon-cyan: #00e5ff;
+  --color-neon-green: #39ff14;
+  --color-neon-red: #ff3b5c;
+  --color-neon-yellow: #ffd600;
+  --color-neon-purple: #b388ff;
+
+  /* Animations */
+  --animate-flash-green: flash-green 600ms ease-out;
+  --animate-flash-red: flash-red 600ms ease-out;
+  --animate-pulse-live: pulse-live 2s ease-in-out infinite;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@keyframes flash-green {
+  0% { background-color: rgba(57, 255, 20, 0.25); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-red {
+  0% { background-color: rgba(255, 59, 92, 0.25); }
+  100% { background-color: transparent; }
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Scrollbar-hide utility */
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }

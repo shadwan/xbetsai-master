@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ConsolidatedOddsEvent, ArbitrageBet, ValueBet } from "@/src/lib/odds-api/types";
 import type { Event } from "odds-api-io";
+import { normalizeValueBet, normalizeArbBet } from "@/src/lib/utils/odds";
 
 // Module-level connected state for useSSEStatus
 let _connected = false;
@@ -57,13 +58,13 @@ export function useSSE(): void {
     });
 
     es.addEventListener("valuebets", (e: MessageEvent) => {
-      const payload: ValueBet[] = JSON.parse(e.data);
-      queryClient.setQueryData(["valueBets"], payload);
+      const raw: Record<string, unknown>[] = JSON.parse(e.data);
+      queryClient.setQueryData(["valueBets"], raw.map(normalizeValueBet) as ValueBet[]);
     });
 
     es.addEventListener("arbbets", (e: MessageEvent) => {
-      const payload: ArbitrageBet[] = JSON.parse(e.data);
-      queryClient.setQueryData(["arbBets"], payload);
+      const raw: Record<string, unknown>[] = JSON.parse(e.data);
+      queryClient.setQueryData(["arbBets"], raw.map(normalizeArbBet) as ArbitrageBet[]);
     });
 
     return () => {
