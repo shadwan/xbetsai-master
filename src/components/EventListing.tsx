@@ -9,14 +9,7 @@ import { SPORTS } from "@/src/lib/odds-api/constants";
 import { getStartTime, getLeagueSlug } from "@/src/lib/utils/odds";
 import type { ConsolidatedOddsEvent, ValueBet, ArbitrageBet } from "@/src/lib/odds-api/types";
 
-type TimeFilter = "live" | "today" | "upcoming";
-
-const TIME_FILTERS: TimeFilter[] = ["live", "today", "upcoming"];
-const TIME_FILTER_LABELS: Record<TimeFilter, string> = {
-  live: "Live",
-  today: "Today",
-  upcoming: "Upcoming",
-};
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
 function isLive(event: ConsolidatedOddsEvent, now: number): boolean {
   if (event.event.status === "live") return true;
@@ -25,18 +18,107 @@ function isLive(event: ConsolidatedOddsEvent, now: number): boolean {
   return now >= new Date(st).getTime();
 }
 
-function classifyEvent(e: ConsolidatedOddsEvent, now: number): TimeFilter | null {
-  if (isLive(e, now)) return "live";
-  const st = new Date(getStartTime(e.event)).getTime();
+/** Get the Monday 00:00 for the week containing `date`. */
+function getMonday(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay(); // 0=Sun, 1=Mon, ...
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  return d;
+}
+
+interface TimeBucket {
+  key: string;
+  label: string;
+  events: ConsolidatedOddsEvent[];
+  isLive?: boolean;
+}
+
+function computeWeekBuckets(
+  sorted: ConsolidatedOddsEvent[],
+  now: number,
+): TimeBucket[] {
+  const buckets: TimeBucket[] = [];
+
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
   const todayMs = todayStart.getTime();
   const tomorrowMs = todayMs + 86_400_000;
-  const dayAfterMs = tomorrowMs + 86_400_000;
-  if (st >= todayMs && st < tomorrowMs) return "today";
-  if (st >= tomorrowMs && st < dayAfterMs) return "upcoming";
-  return null;
+
+  const live: ConsolidatedOddsEvent[] = [];
+  const today: ConsolidatedOddsEvent[] = [];
+  const future: ConsolidatedOddsEvent[] = [];
+
+  for (const e of sorted) {
+    if (isLive(e, now)) {
+      live.push(e);
+      continue;
+    }
+    const st = new Date(getStartTime(e.event)).getTime();
+    if (isNaN(st)) continue;
+    if (st >= todayMs && st < tomorrowMs) {
+      today.push(e);
+    } else if (st >= tomorrowMs) {
+      future.push(e);
+    }
+    // past non-live events are skipped
+  }
+
+  if (live.length > 0) {
+    buckets.push({ key: "live", label: "Live", events: live, isLive: true });
+  }
+  if (today.length > 0) {
+    buckets.push({ key: "today", label: "Today", events: today });
+  }
+
+  // Group future events by week (Mon–Sun)
+  if (future.length > 0) {
+    const weekMap = new Map<string, { monday: Date; events: ConsolidatedOddsEvent[] }>();
+
+    for (const e of future) {
+      const st = new Date(getStartTime(e.event));
+      const monday = getMonday(st);
+      const key = monday.toISOString().split("T")[0];
+
+      if (!weekMap.has(key)) {
+        weekMap.set(key, { monday, events: [] });
+      }
+      weekMap.get(key)!.events.push(e);
+    }
+
+    const thisMonday = getMonday(new Date(now));
+    const thisMondayKey = thisMonday.toISOString().split("T")[0];
+
+    const sortedWeeks = Array.from(weekMap.entries()).sort(
+      ([a], [b]) => a.localeCompare(b),
+    );
+
+    for (const [key, { monday, events }] of sortedWeeks) {
+      const sunday = new Date(monday);
+      sunday.setDate(sunday.getDate() + 6);
+
+      let label: string;
+      if (key === thisMondayKey) {
+        label = "This Week";
+      } else {
+        const sm = monday.toLocaleString("en-US", { month: "short" });
+        const em = sunday.toLocaleString("en-US", { month: "short" });
+        if (sm === em) {
+          label = `${sm} ${monday.getDate()}\u2013${sunday.getDate()}`;
+        } else {
+          label = `${sm} ${monday.getDate()} \u2013 ${em} ${sunday.getDate()}`;
+        }
+      }
+
+      buckets.push({ key, label, events });
+    }
+  }
+
+  return buckets;
 }
+
+// ── Component ───────────────────────────────────────────────────────────────
 
 interface EventListingProps {
   odds: ConsolidatedOddsEvent[] | undefined;
@@ -49,14 +131,21 @@ interface EventListingProps {
   todayOnly?: boolean;
 }
 
-export function EventListing({ odds, isLoading, valueBets, arbBets, singleLeague, todayOnly }: EventListingProps) {
+export function EventListing({
+  odds,
+  isLoading,
+  valueBets,
+  arbBets,
+  singleLeague,
+  todayOnly,
+}: EventListingProps) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(id);
   }, []);
 
-  const [timeFilter, setTimeFilter] = useState<TimeFilter | null>(null);
+  const [activeBucketKey, setActiveBucketKey] = useState<string | null>(null);
 
   const valueBetsByEvent = useMemo(() => {
     const map = new Map<string, ValueBet[]>();
@@ -87,35 +176,50 @@ export function EventListing({ odds, isLoading, valueBets, arbBets, singleLeague
       const bLive = isLive(b, now);
       if (aLive && !bLive) return -1;
       if (!aLive && bLive) return 1;
-      return new Date(getStartTime(a.event)).getTime() - new Date(getStartTime(b.event)).getTime();
+      return (
+        new Date(getStartTime(a.event)).getTime() -
+        new Date(getStartTime(b.event)).getTime()
+      );
     });
   }, [odds, now]);
 
-  const { timeCounts, filteredOdds, activeTimeFilter } = useMemo(() => {
-    const counts: Record<TimeFilter, number> = { live: 0, today: 0, upcoming: 0 };
-    const buckets: Record<TimeFilter, ConsolidatedOddsEvent[]> = {
-      live: [], today: [], upcoming: [],
-    };
-    for (const e of sortedOdds) {
-      const cat = classifyEvent(e, now);
-      if (!cat) continue;
-      counts[cat]++;
-      buckets[cat].push(e);
+  // todayOnly mode: flat list of live + today
+  const todayEvents = useMemo(() => {
+    if (!todayOnly) return [];
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayMs = todayStart.getTime();
+    const tomorrowMs = todayMs + 86_400_000;
+
+    return sortedOdds.filter((e) => {
+      if (isLive(e, now)) return true;
+      const st = new Date(getStartTime(e.event)).getTime();
+      return st >= todayMs && st < tomorrowMs;
+    });
+  }, [sortedOdds, now, todayOnly]);
+
+  // Week buckets mode: for subpages
+  const buckets = useMemo(() => {
+    if (todayOnly) return [];
+    return computeWeekBuckets(sortedOdds, now);
+  }, [sortedOdds, now, todayOnly]);
+
+  // Resolve active bucket
+  const activeBucket = useMemo(() => {
+    if (todayOnly) return null;
+    if (buckets.length === 0) return null;
+    if (activeBucketKey) {
+      const found = buckets.find((b) => b.key === activeBucketKey);
+      if (found) return found;
     }
+    return buckets[0]; // default to first (Live if exists, else Today, else first week)
+  }, [buckets, activeBucketKey, todayOnly]);
 
-    if (todayOnly) {
-      // Combine live + today, no filter buttons
-      const combined = [...buckets.live, ...buckets.today];
-      return { timeCounts: counts, filteredOdds: combined, activeTimeFilter: "today" as TimeFilter };
-    }
+  const filteredOdds = todayOnly
+    ? todayEvents
+    : activeBucket?.events ?? [];
 
-    const auto: TimeFilter = counts.live > 0 ? "live"
-      : counts.today > 0 ? "today"
-      : "upcoming";
-    const effective = timeFilter ?? auto;
-    return { timeCounts: counts, filteredOdds: buckets[effective] ?? [], activeTimeFilter: effective };
-  }, [sortedOdds, now, timeFilter, todayOnly]);
-
+  // Group by league (for multi-league / home view)
   const grouped = useMemo(() => {
     const map = new Map<string, ConsolidatedOddsEvent[]>();
     for (const e of filteredOdds) {
@@ -132,27 +236,29 @@ export function EventListing({ odds, isLoading, valueBets, arbBets, singleLeague
 
   return (
     <>
-      {/* Time filter buttons — hidden when todayOnly */}
-      {!todayOnly && (
+      {/* Week pills — shown on subpages */}
+      {!todayOnly && buckets.length > 0 && (
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-          {TIME_FILTERS.filter((tf) => timeCounts[tf] > 0).map((tf) => (
+          {buckets.map((bucket) => (
             <button
-              key={tf}
-              onClick={() => setTimeFilter(tf)}
+              key={bucket.key}
+              onClick={() => setActiveBucketKey(bucket.key)}
               className={`flex items-center whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                activeTimeFilter === tf
+                activeBucket?.key === bucket.key
                   ? "bg-elevated text-neon-cyan ring-1 ring-neon-cyan/40"
                   : "bg-surface text-text-secondary hover:bg-hover hover:text-text-primary"
               }`}
             >
-              {tf === "live" && (
+              {bucket.isLive && (
                 <span className="relative mr-1.5 flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
                 </span>
               )}
-              {TIME_FILTER_LABELS[tf]}
-              <span className="ml-1.5 text-xs opacity-60">{timeCounts[tf]}</span>
+              {bucket.label}
+              <span className="ml-1.5 text-xs opacity-60">
+                {bucket.events.length}
+              </span>
             </button>
           ))}
         </div>
@@ -163,9 +269,7 @@ export function EventListing({ odds, isLoading, valueBets, arbBets, singleLeague
       {!isLoading && filteredOdds.length === 0 && (
         <div className="rounded-lg border border-border bg-surface px-6 py-16 text-center">
           <p className="text-text-secondary">
-            {todayOnly
-              ? "No events today."
-              : `No ${TIME_FILTER_LABELS[activeTimeFilter].toLowerCase()} events${sortedOdds.length > 0 ? " — try another time filter" : " found"}.`}
+            {todayOnly ? "No events today." : "No events found."}
           </p>
         </div>
       )}
@@ -173,7 +277,11 @@ export function EventListing({ odds, isLoading, valueBets, arbBets, singleLeague
       {!isLoading && filteredOdds.length > 0 && singleLeague && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredOdds.map((e) => (
-            <Link key={e.event.id} href={`/events/${e.event.id}`} className="block">
+            <Link
+              key={e.event.id}
+              href={`/events/${e.event.id}`}
+              className="block"
+            >
               <EventCard
                 event={e}
                 valueBets={valueBetsByEvent.get(String(e.event.id))}
@@ -199,7 +307,11 @@ export function EventListing({ odds, isLoading, valueBets, arbBets, singleLeague
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {events.map((e) => (
-                  <Link key={e.event.id} href={`/events/${e.event.id}`} className="block">
+                  <Link
+                    key={e.event.id}
+                    href={`/events/${e.event.id}`}
+                    className="block"
+                  >
                     <EventCard
                       event={e}
                       valueBets={valueBetsByEvent.get(String(e.event.id))}

@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import * as NBALogos from "react-nba-logos";
 import * as NFLLogos from "react-nfl-logos";
 import * as MLBLogos from "react-mlb-logos";
 import * as NHLLogos from "react-nhl-logos";
+
+// Suppress React DOM warnings for invalid SVG attributes in third-party logo packages
+// (e.g. react-nhl-logos uses `enable-background` instead of `enableBackground`)
+if (typeof window !== "undefined") {
+  const origError = console.error;
+  console.error = (...args: unknown[]) => {
+    if (typeof args[0] === "string" && args[0].includes("Invalid DOM property")) return;
+    origError.apply(console, args);
+  };
+}
 import {
   getTeamAbbreviation,
   getSvgAbbreviation,
