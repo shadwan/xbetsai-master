@@ -14,7 +14,7 @@ import { useValueBets } from "@/src/lib/hooks/use-value-bets";
 import { useArbBets } from "@/src/lib/hooks/use-arb-bets";
 import { useSSE } from "@/src/lib/hooks/use-sse";
 import { SPORTS } from "@/src/lib/odds-api/constants";
-import { getStartTime } from "@/src/lib/utils/odds";
+import { getStartTime, getLeagueSlug } from "@/src/lib/utils/odds";
 import type { ConsolidatedOddsEvent, ValueBet, ArbitrageBet } from "@/src/lib/odds-api/types";
 import type { Event } from "odds-api-io";
 
@@ -113,7 +113,7 @@ function DashboardContent() {
     if (sport !== "all") return null;
     const map = new Map<string, ConsolidatedOddsEvent[]>();
     for (const e of sortedOdds) {
-      const league = e.event.leagueId ?? "unknown";
+      const league = getLeagueSlug(e.event) || "unknown";
       const arr = map.get(league) ?? [];
       arr.push(e);
       map.set(league, arr);

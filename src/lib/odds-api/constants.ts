@@ -61,7 +61,7 @@ export const CACHE_TTL = {
   SPORTS: 2 * 60 * 60 * 1_000,       // 2 h  — rarely changes
   LEAGUES: 2 * 60 * 60 * 1_000,      // 2 h  — rarely changes
   EVENTS: 5 * 60 * 1_000,            // 5 min — pre-match events refresh periodically
-  ODDS_WS: 30 * 1_000,               // 30 s  — safety TTL; WS refreshes continuously
+  ODDS_WS: 5 * 60 * 1_000,            // 5 min — same as REST; WS data stays until next refresh
   ODDS_REST: 5 * 60 * 1_000,          // 5 min — REST-fetched odds (initial + fallback)
   VALUE_BETS: 10 * 1_000,            // 10 s  — recalculated every 5 s by API, time-sensitive
   ARB_BETS: 10 * 1_000,              // 10 s  — same — time-sensitive
@@ -74,6 +74,7 @@ export const CACHE_TTL = {
 
 export const POLL_INTERVAL = {
   EVENTS: 60 * 1_000,     // 60 s  — moderate refresh
+  ODDS: 4 * 60 * 1_000,   // 4 min — refresh before 5-min TTL expires
   VALUE_BETS: 15 * 1_000, // 15 s  — time-sensitive but don't hammer API
   ARB_BETS: 15 * 1_000,   // 15 s  — same reasoning
 } as const;

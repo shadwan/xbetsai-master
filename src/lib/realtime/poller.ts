@@ -545,6 +545,14 @@ export async function startPollers(): Promise<void> {
     }, POLL_INTERVAL.ARB_BETS);
     timers.push(arbBetsTimer as unknown as ReturnType<typeof setTimeout>);
 
+    // 5b. Periodic odds refresh — keeps odds alive regardless of WS activity
+    const oddsRefreshTimer = setInterval(() => {
+      fetchInitialOdds().catch((err) =>
+        console.warn("[poller] Odds refresh error:", (err as Error).message),
+      );
+    }, POLL_INTERVAL.ODDS);
+    timers.push(oddsRefreshTimer as unknown as ReturnType<typeof setTimeout>);
+
     // 6. WS fallback checker
     startWsFallbackChecker();
 

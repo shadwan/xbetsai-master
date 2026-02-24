@@ -4,25 +4,48 @@ import type { Event } from "odds-api-io";
 /**
  * Safely extract team names from an Event.
  * The SDK types declare `homeParticipant.name` / `awayParticipant.name`,
- * but the raw API may return `home` / `away` as plain strings instead.
+ * but the actual API returns `home` / `away` as plain strings.
  */
 export function getTeamNames(event: Event): { home: string; away: string } {
   const raw = event as unknown as Record<string, unknown>;
   const home =
+    (typeof raw.home === "string" ? raw.home : null) ??
     event.homeParticipant?.name ??
-    (typeof raw.home === "string" ? raw.home : "Home");
+    "Home";
   const away =
+    (typeof raw.away === "string" ? raw.away : null) ??
     event.awayParticipant?.name ??
-    (typeof raw.away === "string" ? raw.away : "Away");
+    "Away";
   return { home, away };
 }
 
 /**
  * Safely extract start time from an Event.
- * The API may return `date` instead of `startTime`.
+ * The actual API returns `date`, SDK types declare `startTime`.
  */
 export function getStartTime(event: Event): string {
-  return event.startTime || (event as unknown as { date: string }).date || "";
+  const raw = event as unknown as { date?: string };
+  return raw.date || event.startTime || "";
+}
+
+/**
+ * Safely extract the league slug from an Event.
+ * The actual API returns `league: { slug, name }` (object),
+ * while the SDK types declare `leagueId` (string).
+ */
+export function getLeagueSlug(event: Event): string {
+  const raw = event as unknown as Record<string, unknown>;
+  // Actual API: league is { slug: string, name: string }
+  if (raw.league && typeof raw.league === "object") {
+    const league = raw.league as { slug?: string; id?: string };
+    if (league.slug) return league.slug;
+    if (league.id) return String(league.id);
+  }
+  // SDK type fallback
+  if (event.leagueId) return event.leagueId;
+  // String fallback
+  if (typeof raw.league === "string") return raw.league;
+  return "";
 }
 
 /**

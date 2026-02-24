@@ -78,10 +78,20 @@ export function get<T>(key: string): T | null {
 
 export function set<T>(key: string, data: T, ttl: number, source: "ws" | "rest" = "rest"): void {
   const now = Date.now();
+  const newExpiry = now + ttl;
+
+  // Never shorten an existing entry's TTL — WS writes (30s) should not
+  // overwrite a REST entry's longer TTL (5min).
+  const existing = store.get(key);
+  const expiresAt =
+    existing && existing.expiresAt > now
+      ? Math.max(existing.expiresAt, newExpiry)
+      : newExpiry;
+
   store.set(key, {
     data,
     createdAt: now,
-    expiresAt: now + ttl,
+    expiresAt,
     hash: djb2Hash(JSON.stringify(data)),
   });
   if (source === "ws") {

@@ -13,7 +13,7 @@ import { useValueBets } from "@/src/lib/hooks/use-value-bets";
 import { useArbBets } from "@/src/lib/hooks/use-arb-bets";
 import { useEvents } from "@/src/lib/hooks/use-events";
 import { SPORTS } from "@/src/lib/odds-api/constants";
-import { decimalToAmerican, impliedProbability, getTeamNames } from "@/src/lib/utils/odds";
+import { decimalToAmerican, impliedProbability, getTeamNames, getLeagueSlug } from "@/src/lib/utils/odds";
 import type { Event } from "odds-api-io";
 
 type FilterTab = "all" | "value" | "arb";
@@ -78,7 +78,7 @@ function OpportunitiesContent() {
     if (sport !== "all") {
       filtered = filtered.filter((vb) => {
         const ev = eventMap.get(vb.eventId);
-        return ev?.leagueId === sport;
+        return ev ? getLeagueSlug(ev) === sport : false;
       });
     }
     return [...filtered].sort((a, b) => b.valuePercentage - a.valuePercentage);
@@ -91,7 +91,7 @@ function OpportunitiesContent() {
     if (sport !== "all") {
       filtered = filtered.filter((ab) => {
         const ev = eventMap.get(ab.eventId);
-        return ev?.leagueId === sport;
+        return ev ? getLeagueSlug(ev) === sport : false;
       });
     }
     return [...filtered].sort((a, b) => b.profitPercentage - a.profitPercentage);
@@ -181,8 +181,9 @@ function OpportunitiesContent() {
                   const fairProb = impliedProbability(vb.fairOdds);
                   const kellyQuarter =
                     ((fairProb * vb.odds - 1) / (vb.odds - 1) / 4) * 100;
-                  const league = ev
-                    ? SPORTS.find((s) => s.leagueSlug === ev.leagueId)?.displayName ?? ev.leagueId
+                  const leagueSlug = ev ? getLeagueSlug(ev) : "";
+                  const league = leagueSlug
+                    ? SPORTS.find((s) => s.leagueSlug === leagueSlug)?.displayName ?? leagueSlug
                     : "";
 
                   return (
@@ -266,8 +267,9 @@ function OpportunitiesContent() {
                     ? getTeamNames(ev)
                     : { home: "TBD", away: "TBD" };
                   const eventName = ev ? `${arbHome} vs ${arbAway}` : arb.eventId;
-                  const league = ev
-                    ? SPORTS.find((s) => s.leagueSlug === ev.leagueId)?.displayName ?? ev.leagueId
+                  const leagueSlug = ev ? getLeagueSlug(ev) : "";
+                  const league = leagueSlug
+                    ? SPORTS.find((s) => s.leagueSlug === leagueSlug)?.displayName ?? leagueSlug
                     : "";
 
                   return (

@@ -22,6 +22,7 @@ import {
   impliedProbability,
   getTeamNames,
   getStartTime,
+  getLeagueSlug,
 } from "@/src/lib/utils/odds";
 import type { WsMarket } from "@/src/lib/odds-api/types";
 
@@ -88,8 +89,8 @@ export default function EventDetailPage() {
     : false;
 
   const leagueDisplay = eventOdds
-    ? SPORTS.find((s) => s.leagueSlug === eventOdds.event.leagueId)?.displayName ??
-      eventOdds.event.leagueId
+    ? SPORTS.find((s) => s.leagueSlug === getLeagueSlug(eventOdds.event))?.displayName ??
+      getLeagueSlug(eventOdds.event)
     : "";
 
   const teamNames = eventOdds ? getTeamNames(eventOdds.event) : null;
