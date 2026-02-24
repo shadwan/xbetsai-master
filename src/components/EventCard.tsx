@@ -81,65 +81,74 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
     )}>
       {/* Background watermark logos */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-6 top-1/2 -translate-y-1/2 opacity-[0.12]">
+        <div className="absolute -left-6 top-1/2 -translate-y-1/2 opacity-[0.20]"
+          style={{ maskImage: "linear-gradient(to bottom right, black 15%, transparent 75%)", WebkitMaskImage: "linear-gradient(to bottom right, black 15%, transparent 75%)" }}
+        >
           <TeamLogo league={leagueSlug} teamName={away} size={200} />
         </div>
-        <div className="absolute -right-6 top-1/2 -translate-y-1/2 opacity-[0.12]">
+        <div className="absolute -right-6 top-1/2 -translate-y-1/2 opacity-[0.20]"
+          style={{ maskImage: "linear-gradient(to bottom left, black 15%, transparent 75%)", WebkitMaskImage: "linear-gradient(to bottom left, black 15%, transparent 75%)" }}
+        >
           <TeamLogo league={leagueSlug} teamName={home} size={200} />
         </div>
-        {/* Radial overlay to fade edges */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#0d1520_75%)]" />
-        {/* Gold overlay on favorite side — visible on hover */}
-        {favorite && (
-          <div className={cn(
-            "absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100",
-            favorite === "away"
-              ? "bg-gradient-to-r from-[#F1E185]/[0.12] via-[#F1E185]/[0.03] to-transparent"
-              : "bg-gradient-to-l from-[#F1E185]/[0.12] via-[#F1E185]/[0.03] to-transparent",
-          )} />
-        )}
+        {/* Edge fades — top, bottom, and center seam */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0d1520] via-transparent to-[#0d1520] via-[15%]" style={{ backgroundSize: "100% 100%", backgroundImage: "linear-gradient(to bottom, #0d1520 0%, transparent 15%, transparent 85%, #0d1520 100%)" }} />
       </div>
 
       {/* Content */}
       <div className="relative z-10">
-        {/* Top: signal badges */}
-        {(hasEdge || hasArb || live) && (
-          <div className="flex items-center gap-1.5 px-4 pt-3 pb-0">
-            {hasEdge && (
-              <span
-                className="flex items-center gap-1 rounded-full bg-neon-green/10 px-2 py-0.5 ring-1 ring-neon-green/25"
-                title="+EV Opportunity"
-              >
-                <span className="text-[10px] font-extrabold tracking-wide text-neon-green">+EV</span>
-              </span>
-            )}
-            {hasArb && (
-              <span
-                className="flex items-center gap-1 rounded-full bg-neon-yellow/10 px-2 py-0.5 ring-1 ring-neon-yellow/25"
-                title="Sure — Guaranteed Profit"
-              >
-                <MotionIcon name="Trophy" size={14} color="var(--color-neon-yellow)" animation="none" />
-                <span className="text-[10px] font-extrabold tracking-wide text-neon-yellow">SURE</span>
-              </span>
-            )}
-            {live && <LiveBadge />}
-          </div>
-        )}
+        {/* Top row: badges + time (for today's events, time sits in same row) */}
+        <div className="flex items-center gap-2 px-5 pt-4 pb-0">
+          {hasEdge && (
+            <span
+              className="flex items-center gap-1 rounded-full bg-neon-green/10 px-2.5 py-1 ring-1 ring-neon-green/25"
+              title="+EV Opportunity"
+            >
+              <span className="text-sm font-extrabold tracking-wide text-neon-green">+EV</span>
+            </span>
+          )}
+          {hasArb && (
+            <span
+              className="flex items-center gap-1 rounded-full bg-neon-yellow/10 px-2.5 py-1 ring-1 ring-neon-yellow/25"
+              title="Sure — Guaranteed Profit"
+            >
+              <MotionIcon name="Trophy" size={16} color="var(--color-neon-yellow)" animation="none" />
+              <span className="text-sm font-extrabold tracking-wide text-neon-yellow">SURE</span>
+            </span>
+          )}
+          {live && <LiveBadge />}
+          {/* Today's time — pushed to the right */}
+          {!live && dateLabel === "Today" && (
+            <span className="ml-auto text-lg font-extrabold text-white/50">
+              {time}
+            </span>
+          )}
+        </div>
 
-        {/* Date & time — centered between top and matchup */}
-        {!live && (
+        {/* Win probability label — always rendered for consistent height, visible on hover only if consensus */}
+        <div className={cn(
+          "text-center pt-2 pb-0 transition-opacity duration-300",
+          consensus ? "opacity-0 group-hover:opacity-100" : "opacity-0",
+        )}>
+          <span className="text-xs font-bold uppercase tracking-widest text-white/60 whitespace-nowrap">
+            Win Probability · Market Consensus
+          </span>
+        </div>
+
+        {/* Date & time row — only for non-today, non-live events */}
+        {!live && dateLabel !== "Today" && (
           <div className="flex flex-col items-center pt-3 pb-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wide text-text-secondary">
+              <span className="text-base font-bold uppercase tracking-wide text-text-secondary">
                 {dateLabel}
               </span>
               <span className="text-text-tertiary/50">·</span>
-              <span className="text-sm font-extrabold text-text-primary">
+              <span className="text-lg font-extrabold text-text-primary">
                 {time}
               </span>
             </div>
             {sublabel && (
-              <span className="text-[10px] font-medium text-text-tertiary">
+              <span className="text-sm font-medium text-text-tertiary">
                 {sublabel}
               </span>
             )}
@@ -148,93 +157,85 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
 
         {/* Matchup hero */}
         <div className={cn(
-          "flex items-center justify-between px-5 pb-5",
-          live && !hasEdge && !hasArb ? "pt-4" : "pt-1",
+          "flex items-center justify-between px-6 pb-6",
+          live && !hasEdge && !hasArb ? "pt-5" : "pt-2",
         )}>
           {/* Away team */}
-          <div className="flex flex-col items-center gap-2.5 min-w-0 flex-1">
-            <div className="relative">
-              {/* Crown + percentage above logo — horizontal */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div className="flex flex-col items-center gap-3 min-w-0 flex-1">
+            <TeamLogo league={leagueSlug} teamName={away} size={72} />
+            <div className="text-center w-full overflow-hidden">
+              <p className="text-sm font-semibold text-text-secondary leading-tight truncate max-w-full">
+                {awayParts.location}
+              </p>
+              <p className="text-xl font-extrabold text-text-primary leading-tight tracking-tight truncate max-w-full">
+                {awayParts.nickname}
+              </p>
+              {/* Crown + percentage below team name */}
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 mt-1 transition-opacity duration-300",
+                  consensus ? "opacity-0 group-hover:opacity-100" : "opacity-0",
+                )}
+              >
                 {favorite === "away" && (
                   <Crown
-                    size={12}
+                    size={14}
                     className="text-[#F1E185] drop-shadow-[0_0_4px_rgba(241,225,133,0.6)] shrink-0"
                     fill="rgba(241,225,133,0.3)"
                     strokeWidth={2.5}
                     aria-label="Predicted favorite"
                   />
                 )}
-                {consensus && (
-                  <span className={cn(
-                    "text-[11px] font-black tabular-nums leading-none whitespace-nowrap",
-                    favorite === "away"
-                      ? "text-[#F1E185] drop-shadow-[0_0_6px_rgba(241,225,133,0.5)]"
-                      : "text-text-tertiary",
-                  )}>
-                    {Math.round(consensus.away.probability * 100)}%
-                  </span>
-                )}
-              </div>
-              <TeamLogo league={leagueSlug} teamName={away} size={60} />
-            </div>
-            <div className="text-center">
-              <p className="text-[11px] font-semibold text-text-secondary leading-tight">
-                {awayParts.location}
-              </p>
-              <p className="text-[15px] font-extrabold text-text-primary leading-tight tracking-tight">
-                {awayParts.nickname}
-              </p>
+                <span
+                  className="text-base font-[900] tabular-nums leading-none whitespace-nowrap drop-shadow-[0_0_6px_rgba(241,225,133,0.5)]"
+                  style={{ color: favorite === "away" ? "#F1E185" : "rgba(255,255,255,0.55)" }}
+                >
+                  {consensus ? `${Math.round(consensus.away.probability * 100)}%` : "0%"}
+                </span>
+              </span>
             </div>
           </div>
 
           {/* VS divider */}
-          <div className="flex shrink-0 flex-col items-center justify-center mx-3 gap-1">
-            <span className="text-lg font-black tracking-wider text-neon-gold/60">
+          <div className="flex shrink-0 items-center justify-center mx-2">
+            <span className="text-2xl font-black tracking-wider text-neon-gold/60">
               VS
             </span>
-            {/* Win probability label — appears on hover */}
-            {consensus && (
-              <span className="text-[8px] font-bold uppercase tracking-widest text-white/60 text-center leading-tight opacity-0 transition-opacity duration-300 group-hover:opacity-100 whitespace-nowrap">
-                Win Probability<br />Market Consensus
-              </span>
-            )}
           </div>
 
           {/* Home team */}
-          <div className="flex flex-col items-center gap-2.5 min-w-0 flex-1">
-            <div className="relative">
-              {/* Crown + percentage above logo — horizontal */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div className="flex flex-col items-center gap-3 min-w-0 flex-1">
+            <TeamLogo league={leagueSlug} teamName={home} size={72} />
+            <div className="text-center w-full overflow-hidden">
+              <p className="text-sm font-semibold text-text-secondary leading-tight truncate max-w-full">
+                {homeParts.location}
+              </p>
+              <p className="text-xl font-extrabold text-text-primary leading-tight tracking-tight truncate max-w-full">
+                {homeParts.nickname}
+              </p>
+              {/* Crown + percentage below team name */}
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 mt-1 transition-opacity duration-300",
+                  consensus ? "opacity-0 group-hover:opacity-100" : "opacity-0",
+                )}
+              >
                 {favorite === "home" && (
                   <Crown
-                    size={12}
+                    size={14}
                     className="text-[#F1E185] drop-shadow-[0_0_4px_rgba(241,225,133,0.6)] shrink-0"
                     fill="rgba(241,225,133,0.3)"
                     strokeWidth={2.5}
                     aria-label="Predicted favorite"
                   />
                 )}
-                {consensus && (
-                  <span className={cn(
-                    "text-[11px] font-black tabular-nums leading-none whitespace-nowrap",
-                    favorite === "home"
-                      ? "text-[#F1E185] drop-shadow-[0_0_6px_rgba(241,225,133,0.5)]"
-                      : "text-text-tertiary",
-                  )}>
-                    {Math.round(consensus.home.probability * 100)}%
-                  </span>
-                )}
-              </div>
-              <TeamLogo league={leagueSlug} teamName={home} size={60} />
-            </div>
-            <div className="text-center">
-              <p className="text-[11px] font-semibold text-text-secondary leading-tight">
-                {homeParts.location}
-              </p>
-              <p className="text-[15px] font-extrabold text-text-primary leading-tight tracking-tight">
-                {homeParts.nickname}
-              </p>
+                <span
+                  className="text-base font-[900] tabular-nums leading-none whitespace-nowrap drop-shadow-[0_0_6px_rgba(241,225,133,0.5)]"
+                  style={{ color: favorite === "home" ? "#F1E185" : "rgba(255,255,255,0.55)" }}
+                >
+                  {consensus ? `${Math.round(consensus.home.probability * 100)}%` : "0%"}
+                </span>
+              </span>
             </div>
           </div>
         </div>

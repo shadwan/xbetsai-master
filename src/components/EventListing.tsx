@@ -275,7 +275,7 @@ export function EventListing({
       )}
 
       {!isLoading && filteredOdds.length > 0 && singleLeague && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredOdds.map((e) => (
             <Link
               key={e.event.id}
@@ -305,7 +305,7 @@ export function EventListing({
                   {events.length} {events.length === 1 ? "game" : "games"}
                 </span>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {events.map((e) => (
                   <Link
                     key={e.event.id}
