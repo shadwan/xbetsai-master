@@ -1,11 +1,14 @@
 "use client";
 
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { ConsolidatedOddsEvent, ArbitrageBet, ValueBet } from "@/src/lib/odds-api/types";
 import { getTeamNames, getStartTime, getLeagueSlug } from "@/src/lib/utils/odds";
 import { getTeamParts } from "@/src/lib/utils/team-abbrevs";
+import { computeMarketConsensus } from "@/src/lib/utils/predictions";
 import { MotionIcon } from "motion-icons-react";
 import { LiveBadge } from "./LiveBadge";
+import { PredictionBar } from "./PredictionBar";
 import { TeamLogo } from "./TeamLogo";
 
 interface EventCardProps {
@@ -57,6 +60,7 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
   const hasArb = !!eventArbBet;
 
   const { label: dateLabel, sublabel, time } = formatDateLine(getStartTime(event.event));
+  const consensus = useMemo(() => computeMarketConsensus(event), [event]);
 
   return (
     <div className={cn(
@@ -164,6 +168,11 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
             </div>
           </div>
         </div>
+
+        {/* Market consensus prediction bar */}
+        {consensus && (
+          <PredictionBar consensus={consensus} className="px-5 pb-3" />
+        )}
 
         {/* Bottom accent line */}
         <div className={cn(

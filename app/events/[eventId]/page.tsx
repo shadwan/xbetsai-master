@@ -24,6 +24,8 @@ import {
   getStartTime,
   getLeagueSlug,
 } from "@/src/lib/utils/odds";
+import { computeMarketConsensus, getBookmakerBreakdown } from "@/src/lib/utils/predictions";
+import { PredictionBar } from "@/src/components/PredictionBar";
 import type { WsMarket } from "@/src/lib/odds-api/types";
 
 const MARKET_NAMES = ["ML", "Spread", "Totals"] as const;
@@ -137,6 +139,90 @@ export default function EventDetailPage() {
                 <span>{formatStartTime(getStartTime(eventOdds.event))}</span>
               </div>
             </div>
+
+            {/* Market consensus predictions */}
+            {(() => {
+              const consensus = computeMarketConsensus(eventOdds);
+              if (!consensus) return null;
+              const breakdown = getBookmakerBreakdown(eventOdds);
+              return (
+                <section className="space-y-3">
+                  <h2 className="text-lg font-semibold text-text-primary">
+                    Market Consensus
+                  </h2>
+                  <div className="rounded-lg border border-border bg-surface p-4 space-y-4">
+                    {/* Summary bar */}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-semibold text-text-primary">{consensus.away.name}</span>
+                      <span className="text-xs text-text-tertiary">
+                        {consensus.bookmakerCount} bookmakers
+                      </span>
+                      <span className="font-semibold text-text-primary">{consensus.home.name}</span>
+                    </div>
+                    <PredictionBar consensus={consensus} />
+
+                    {/* Per-bookmaker breakdown */}
+                    {breakdown.length > 0 && (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-border">
+                              <th className="py-2 pr-4 text-left text-xs font-medium text-text-tertiary">
+                                Bookmaker
+                              </th>
+                              <th className="py-2 px-2 text-center text-xs font-medium text-text-tertiary">
+                                {consensus.away.name}
+                              </th>
+                              {consensus.draw && (
+                                <th className="py-2 px-2 text-center text-xs font-medium text-text-tertiary">
+                                  Draw
+                                </th>
+                              )}
+                              <th className="py-2 pl-2 text-center text-xs font-medium text-text-tertiary">
+                                {consensus.home.name}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {breakdown.map((bk) => (
+                              <tr key={bk.bookmaker} className="border-b border-border/50">
+                                <td className="py-1.5 pr-4 text-text-secondary">{bk.bookmaker}</td>
+                                <td className="py-1.5 px-2 text-center font-mono text-text-primary">
+                                  {(bk.away * 100).toFixed(1)}%
+                                </td>
+                                {consensus.draw && (
+                                  <td className="py-1.5 px-2 text-center font-mono text-text-primary">
+                                    {((bk.draw ?? 0) * 100).toFixed(1)}%
+                                  </td>
+                                )}
+                                <td className="py-1.5 pl-2 text-center font-mono text-text-primary">
+                                  {(bk.home * 100).toFixed(1)}%
+                                </td>
+                              </tr>
+                            ))}
+                            {/* Consensus average row */}
+                            <tr className="font-semibold">
+                              <td className="py-1.5 pr-4 text-neon-cyan">Consensus</td>
+                              <td className="py-1.5 px-2 text-center font-mono text-neon-cyan">
+                                {(consensus.away.probability * 100).toFixed(1)}%
+                              </td>
+                              {consensus.draw && (
+                                <td className="py-1.5 px-2 text-center font-mono text-neon-cyan">
+                                  {(consensus.draw.probability * 100).toFixed(1)}%
+                                </td>
+                              )}
+                              <td className="py-1.5 pl-2 text-center font-mono text-neon-cyan">
+                                {(consensus.home.probability * 100).toFixed(1)}%
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              );
+            })()}
 
             {/* Full odds — all 3 markets */}
             <section className="space-y-4">
