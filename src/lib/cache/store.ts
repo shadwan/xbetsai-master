@@ -2,25 +2,24 @@
 // In-memory cache store — module-scoped singleton
 // ---------------------------------------------------------------------------
 
+import type { Event, ValueBet } from "odds-api-io";
 import type {
   CacheEntry,
   CacheStats,
   ConsolidatedOddsEvent,
-  OddsEvent,
-  ValueBet,
   WsMarket,
 } from "@/src/lib/odds-api/types";
 
-// ── Module-scoped state (not exported) ──────────────────────────────────────
+// ── Module-scoped state (not exported) ──────────────────────────────────
 
 const store = new Map<string, CacheEntry<unknown>>();
 
-const stats = { hits: 0, misses: 0, writes: 0, pruneCount: 0 };
+const stats = { hits: 0, misses: 0, wsWrites: 0, restWrites: 0, restUnchanged: 0, pruned: 0 };
 
 let pruneIntervalId: ReturnType<typeof setInterval> | null = null;
 const PRUNE_INTERVAL_MS = 60_000;
 
-// ── Internal helpers ────────────────────────────────────────────────────────
+// ── Internal helpers ────────────────────────────────────────────────────
 
 /** Fast non-crypto hash for change detection (djb2). */
 function djb2Hash(input: string): string {
@@ -40,19 +39,19 @@ function ensurePruneInterval(): void {
   }
 }
 
-function findEventById(eventId: number): OddsEvent | null {
+function findEventById(eventId: string): Event | null {
   const now = Date.now();
   for (const [key, entry] of store) {
     if (!key.startsWith("events:")) continue;
     if (entry.expiresAt <= now) continue;
-    const events = entry.data as OddsEvent[];
+    const events = entry.data as Event[];
     const found = events.find((e) => e.id === eventId);
     if (found) return found;
   }
   return null;
 }
 
-// ── Exported cache methods ──────────────────────────────────────────────────
+// ── Exported cache methods ──────────────────────────────────────────────
 
 export function get<T>(key: string): T | null {
   const entry = store.get(key);
@@ -69,15 +68,19 @@ export function get<T>(key: string): T | null {
   return entry.data as T;
 }
 
-export function set<T>(key: string, data: T, ttl: number): void {
+export function set<T>(key: string, data: T, ttl: number, source: "ws" | "rest" = "rest"): void {
   const now = Date.now();
   store.set(key, {
     data,
-    cachedAt: now,
+    createdAt: now,
     expiresAt: now + ttl,
     hash: djb2Hash(JSON.stringify(data)),
   });
-  stats.writes++;
+  if (source === "ws") {
+    stats.wsWrites++;
+  } else {
+    stats.restWrites++;
+  }
   ensurePruneInterval();
 }
 
@@ -95,11 +98,12 @@ export function setIfChanged<T>(key: string, data: T, ttl: number): boolean {
   if (existing && existing.hash === newHash && existing.expiresAt > now) {
     // Same data — just bump TTL
     store.set(key, { ...existing, expiresAt: now + ttl });
+    stats.restUnchanged++;
     return false;
   }
 
-  store.set(key, { data, cachedAt: now, expiresAt: now + ttl, hash: newHash });
-  stats.writes++;
+  store.set(key, { data, createdAt: now, expiresAt: now + ttl, hash: newHash });
+  stats.restWrites++;
   ensurePruneInterval();
   return true;
 }
@@ -134,7 +138,7 @@ export function prune(): number {
       removed++;
     }
   }
-  stats.pruneCount += removed;
+  stats.pruned += removed;
 
   if (store.size === 0 && pruneIntervalId !== null) {
     clearInterval(pruneIntervalId);
@@ -149,8 +153,10 @@ export function getStats(): CacheStats {
     size: store.size,
     hits: stats.hits,
     misses: stats.misses,
-    writes: stats.writes,
-    pruneCount: stats.pruneCount,
+    wsWrites: stats.wsWrites,
+    restWrites: stats.restWrites,
+    restUnchanged: stats.restUnchanged,
+    pruned: stats.pruned,
   };
 }
 
@@ -162,10 +168,10 @@ export function clear(): void {
   }
 }
 
-// ── Consolidation helpers ───────────────────────────────────────────────────
+// ── Consolidation helpers ───────────────────────────────────────────────
 
 export function getConsolidatedEvent(
-  eventId: number,
+  eventId: string,
 ): ConsolidatedOddsEvent | null {
   const event = findEventById(eventId);
   if (!event) return null;
@@ -188,7 +194,7 @@ export function getConsolidatedEvent(
     if (!entry || entry.expiresAt <= Date.now()) continue;
 
     bookmakers[bookie] = entry.data;
-    if (entry.cachedAt > lastUpdated) lastUpdated = entry.cachedAt;
+    if (entry.createdAt > lastUpdated) lastUpdated = entry.createdAt;
   }
 
   return { event, bookmakers, lastUpdated };
@@ -203,18 +209,19 @@ export function getAllValueBets(): ValueBet[] {
     const bets = get<ValueBet[]>(key);
     if (!bets) continue;
     for (const bet of bets) {
-      if (seen.has(bet.id)) continue;
-      seen.add(bet.id);
+      const dedupeKey = `${bet.eventId}:${bet.bookmaker}:${bet.market}:${bet.outcome}`;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
       result.push(bet);
     }
   }
 
-  result.sort((a, b) => b.expectedValue - a.expectedValue);
+  result.sort((a, b) => b.valuePercentage - a.valuePercentage);
   return result;
 }
 
-export function getEventsBySport(leagueSlug: string): OddsEvent[] {
-  return get<OddsEvent[]>(`events:${leagueSlug}`) ?? [];
+export function getEventsBySport(leagueSlug: string): Event[] {
+  return get<Event[]>(`events:${leagueSlug}`) ?? [];
 }
 
 export function getAllConsolidatedEvents(

@@ -6,7 +6,7 @@ export type SportConfig = {
   readonly displayName: string;
   readonly sportSlug: string;
   readonly leagueSlug: string;
-  readonly seasonInfo: string;
+  readonly season: string;
 };
 
 // ── Endpoints ───────────────────────────────────────────────────────────────
@@ -32,12 +32,12 @@ export type BookmakerName = (typeof BOOKMAKERS)[number];
 // ── Sports & Leagues ────────────────────────────────────────────────────────
 
 export const SPORTS = [
-  { displayName: "NFL", sportSlug: "american-football", leagueSlug: "usa-nfl", seasonInfo: "Sep-Feb" },
-  { displayName: "NBA", sportSlug: "basketball", leagueSlug: "usa-nba", seasonInfo: "Oct-Jun" },
-  { displayName: "MLB", sportSlug: "baseball", leagueSlug: "usa-mlb", seasonInfo: "Mar-Nov" },
-  { displayName: "NHL", sportSlug: "ice-hockey", leagueSlug: "usa-nhl", seasonInfo: "Oct-Jun" },
-  { displayName: "NCAAF", sportSlug: "american-football", leagueSlug: "usa-ncaaf", seasonInfo: "Aug-Jan" },
-  { displayName: "NCAAMB", sportSlug: "basketball", leagueSlug: "usa-ncaab", seasonInfo: "Nov-Apr" },
+  { displayName: "NFL", sportSlug: "american-football", leagueSlug: "usa-nfl", season: "Sep-Feb" },
+  { displayName: "NBA", sportSlug: "basketball", leagueSlug: "usa-nba", season: "Oct-Jun" },
+  { displayName: "MLB", sportSlug: "baseball", leagueSlug: "usa-mlb", season: "Mar-Nov" },
+  { displayName: "NHL", sportSlug: "ice-hockey", leagueSlug: "usa-nhl", season: "Oct-Jun" },
+  { displayName: "NCAAF", sportSlug: "american-football", leagueSlug: "usa-ncaaf", season: "Aug-Jan" },
+  { displayName: "NCAAMB", sportSlug: "basketball", leagueSlug: "usa-ncaab", season: "Nov-Apr" },
 ] as const satisfies readonly SportConfig[];
 
 export type LeagueSlug = (typeof SPORTS)[number]["leagueSlug"];
