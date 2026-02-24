@@ -28,10 +28,10 @@ export function PropsSection({ eventId }: PropsSectionProps) {
       <div className="space-y-3">
         <div className="flex gap-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} variant="line" className="w-20 h-7 rounded-full" />
+            <Skeleton key={i} className="w-20 h-7 rounded-full" />
           ))}
         </div>
-        <Skeleton variant="card" className="h-64" />
+        <Skeleton className="h-64 w-full rounded-lg" />
       </div>
     );
   }

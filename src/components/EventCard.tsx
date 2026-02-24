@@ -1,41 +1,18 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import type { ConsolidatedOddsEvent, ArbitrageBet, ValueBet } from "@/src/lib/odds-api/types";
-import { BOOKMAKERS } from "@/src/lib/odds-api/constants";
-import { findBestOdds, formatLine, getTeamNames, getStartTime, getLeagueSlug } from "@/src/lib/utils/odds";
-import { OddsCell } from "./OddsCell";
+import { getTeamNames, getStartTime, getLeagueSlug } from "@/src/lib/utils/odds";
+import { getTeamParts } from "@/src/lib/utils/team-abbrevs";
 import { LiveBadge } from "./LiveBadge";
 import { EVBadge } from "./EVBadge";
 import { ArbBadge } from "./ArbBadge";
 import { TeamLogo } from "./TeamLogo";
 
-type MarketType = "ML" | "Spread" | "Totals";
-
 interface EventCardProps {
   event: ConsolidatedOddsEvent;
-  activeMarket: MarketType;
   valueBets?: ValueBet[];
   arbBets?: ArbitrageBet[];
-}
-
-function getOutcomeRows(activeMarket: MarketType): { key: string; label: string }[] {
-  switch (activeMarket) {
-    case "ML":
-      return [
-        { key: "home", label: "Home" },
-        { key: "away", label: "Away" },
-      ];
-    case "Spread":
-      return [
-        { key: "home", label: "Home" },
-        { key: "away", label: "Away" },
-      ];
-    case "Totals":
-      return [
-        { key: "over", label: "Over" },
-        { key: "under", label: "Under" },
-      ];
-  }
 }
 
 function isLive(event: ConsolidatedOddsEvent): boolean {
@@ -45,121 +22,116 @@ function isLive(event: ConsolidatedOddsEvent): boolean {
   return Date.now() >= new Date(st).getTime();
 }
 
-function formatEventStartTime(isoString: string): string {
-  if (!isoString) return "";
+function formatDateLine(isoString: string): { date: string; time: string } {
+  if (!isoString) return { date: "", time: "" };
   const d = new Date(isoString);
-  if (isNaN(d.getTime())) return "";
-  return d.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  if (isNaN(d.getTime())) return { date: "", time: "" };
+  const date = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return { date, time };
 }
 
-export function EventCard({ event, activeMarket, valueBets, arbBets }: EventCardProps) {
-  const bestOdds = findBestOdds(activeMarket, event.bookmakers);
-  const outcomeRows = getOutcomeRows(activeMarket);
+export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
   const live = isLive(event);
   const { home, away } = getTeamNames(event.event);
   const leagueSlug = getLeagueSlug(event.event);
+  const awayParts = getTeamParts(leagueSlug, away);
+  const homeParts = getTeamParts(leagueSlug, home);
 
-  // Find EV/arb badges for this event
   const eventValueBet = valueBets?.find((vb) => vb.eventId === event.event.id);
   const eventArbBet = arbBets?.find((ab) => ab.eventId === event.event.id);
+  const hasEdge = !!eventValueBet;
+  const hasArb = !!eventArbBet;
 
-  // Get line info from first bookmaker that has this market
-  let hdp: number | undefined;
-  for (const [, bkData] of Object.entries(event.bookmakers)) {
-    const market = bkData.markets.find((m) => m.name === activeMarket);
-    if (market?.odds[0]?.hdp != null) {
-      hdp = market.odds[0].hdp;
-      break;
-    }
-  }
-  const lineDisplay = formatLine(activeMarket, hdp);
-
-  // Check for draw in ML
-  const hasDrawInML =
-    activeMarket === "ML" &&
-    Object.values(event.bookmakers).some((bk) => {
-      const market = bk.markets.find((m) => m.name === "ML");
-      return market?.odds[0]?.draw != null;
-    });
-
-  const rows = hasDrawInML
-    ? [...outcomeRows, { key: "draw", label: "Draw" }]
-    : outcomeRows;
+  const { date, time } = formatDateLine(getStartTime(event.event));
 
   return (
-    <div className="rounded-lg border border-border bg-surface overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="flex items-center gap-1.5 truncate">
-            <TeamLogo league={leagueSlug} teamName={home} size={20} className="shrink-0" />
-            <span className="text-sm font-semibold text-text-primary">{home}</span>
-            <span className="text-xs text-text-tertiary">vs</span>
-            <TeamLogo league={leagueSlug} teamName={away} size={20} className="shrink-0" />
-            <span className="text-sm font-semibold text-text-primary">{away}</span>
-          </div>
-          {eventValueBet && <EVBadge valuePercentage={eventValueBet.valuePercentage} />}
-          {eventArbBet && <ArbBadge profitPercentage={eventArbBet.profitPercentage} />}
+    <div className={cn(
+      "group relative overflow-hidden rounded-2xl border transition-all duration-300",
+      "bg-[#0d1520] hover:shadow-[0_0_40px_rgba(241,225,133,0.06)]",
+      hasArb
+        ? "border-neon-yellow/30 hover:border-neon-yellow/50"
+        : hasEdge
+          ? "border-neon-green/25 hover:border-neon-green/40"
+          : "border-[#1e2d3d] hover:border-[#2a4055]",
+    )}>
+      {/* Background watermark logos */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-6 top-1/2 -translate-y-1/2 opacity-[0.12]">
+          <TeamLogo league={leagueSlug} teamName={away} size={200} />
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {live ? <LiveBadge /> : (
-            <span className="text-xs text-text-secondary">
-              {formatEventStartTime(getStartTime(event.event))}
-            </span>
-          )}
+        <div className="absolute -right-6 top-1/2 -translate-y-1/2 opacity-[0.12]">
+          <TeamLogo league={leagueSlug} teamName={home} size={200} />
         </div>
+        {/* Radial overlay to fade edges */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#0d1520_75%)]" />
       </div>
 
-      {/* Odds grid */}
-      <div className="overflow-x-auto">
-        <div className="min-w-[500px]">
-          {/* Column headers */}
-          <div className="grid gap-1 px-4 py-2" style={{ gridTemplateColumns: `120px repeat(${BOOKMAKERS.length}, 1fr)` }}>
-            <div className="text-xs text-text-tertiary font-medium">
-              {lineDisplay && <span className="text-text-secondary">{lineDisplay}</span>}
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Top: date/time + signal badges */}
+        <div className="flex items-center justify-between px-4 pt-3.5 pb-0">
+          <div className="flex items-center gap-1.5">
+            {hasEdge && <EVBadge valuePercentage={eventValueBet.valuePercentage} />}
+            {hasArb && <ArbBadge profitPercentage={eventArbBet.profitPercentage} />}
+          </div>
+          {live ? (
+            <LiveBadge />
+          ) : (
+            <div className="text-right">
+              <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                {date}
+              </p>
+              <p className="text-base font-extrabold text-text-primary">{time}</p>
             </div>
-            {BOOKMAKERS.map((bk) => (
-              <div key={bk} className="text-center text-xs text-text-tertiary font-medium truncate">
-                {bk}
-              </div>
-            ))}
+          )}
+        </div>
+
+        {/* Matchup hero */}
+        <div className="flex items-center justify-between px-5 pb-5 pt-1">
+          {/* Away team */}
+          <div className="flex flex-col items-center gap-2.5 min-w-0 flex-1">
+            <TeamLogo league={leagueSlug} teamName={away} size={60} />
+            <div className="text-center">
+              <p className="text-[11px] font-semibold text-text-secondary leading-tight">
+                {awayParts.location}
+              </p>
+              <p className="text-[15px] font-extrabold text-text-primary leading-tight tracking-tight">
+                {awayParts.nickname}
+              </p>
+            </div>
           </div>
 
-          {/* Outcome rows */}
-          {rows.map((row) => (
-            <div
-              key={row.key}
-              className="grid gap-1 px-4 py-0.5"
-              style={{ gridTemplateColumns: `120px repeat(${BOOKMAKERS.length}, 1fr)` }}
-            >
-              <div className="flex items-center text-sm text-text-secondary sticky left-0 bg-surface z-10">
-                {row.label}
-              </div>
-              {BOOKMAKERS.map((bk) => {
-                const bkData = event.bookmakers[bk];
-                const market = bkData?.markets.find((m) => m.name === activeMarket);
-                const outcome = market?.odds[0];
-                const oddsVal = outcome?.[row.key as keyof typeof outcome];
-                const decimal = oddsVal != null ? parseFloat(String(oddsVal)) : null;
-                const isBest = bestOdds[row.key]?.bookmaker === bk && decimal != null;
+          {/* VS divider */}
+          <div className="flex shrink-0 items-center justify-center mx-3">
+            <span className="text-lg font-black tracking-wider text-neon-gold/60">
+              VS
+            </span>
+          </div>
 
-                return (
-                  <OddsCell
-                    key={bk}
-                    decimalOdds={isNaN(decimal as number) ? null : decimal}
-                    isBest={isBest}
-                    marketType={activeMarket}
-                  />
-                );
-              })}
+          {/* Home team */}
+          <div className="flex flex-col items-center gap-2.5 min-w-0 flex-1">
+            <TeamLogo league={leagueSlug} teamName={home} size={60} />
+            <div className="text-center">
+              <p className="text-[11px] font-semibold text-text-secondary leading-tight">
+                {homeParts.location}
+              </p>
+              <p className="text-[15px] font-extrabold text-text-primary leading-tight tracking-tight">
+                {homeParts.nickname}
+              </p>
             </div>
-          ))}
+          </div>
         </div>
+
+        {/* Bottom accent line */}
+        <div className={cn(
+          "h-[2px]",
+          hasArb
+            ? "bg-gradient-to-r from-transparent via-neon-yellow/40 to-transparent"
+            : hasEdge
+              ? "bg-gradient-to-r from-transparent via-neon-green/30 to-transparent"
+              : "bg-gradient-to-r from-transparent via-neon-gold/15 to-transparent",
+        )} />
       </div>
     </div>
   );

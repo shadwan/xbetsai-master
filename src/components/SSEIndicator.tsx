@@ -1,27 +1,37 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { useSSEStatus } from "@/src/lib/hooks/use-sse";
 
 export function SSEIndicator() {
   const { connected } = useSSEStatus();
 
   return (
-    <div className="flex items-center gap-1.5" title={connected ? "Live connected" : "Disconnected"}>
+    <Badge
+      variant="outline"
+      className={cn(
+        "gap-1.5 border-transparent",
+        connected
+          ? "bg-neon-green/10 text-neon-green"
+          : "bg-neon-red/10 text-neon-red",
+      )}
+      title={connected ? "Live connected" : "Disconnected"}
+    >
       <span
-        className={`relative flex h-2.5 w-2.5 ${connected ? "" : "animate-pulse-live"}`}
+        className={cn("relative flex h-2 w-2", !connected && "animate-pulse-live")}
       >
         {connected && (
           <span className="absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-40 blur-sm" />
         )}
         <span
-          className={`relative inline-flex h-2.5 w-2.5 rounded-full ${
-            connected ? "bg-neon-green" : "bg-neon-red"
-          }`}
+          className={cn(
+            "relative inline-flex h-2 w-2 rounded-full",
+            connected ? "bg-neon-green" : "bg-neon-red",
+          )}
         />
       </span>
-      <span className="text-xs text-text-secondary">
-        {connected ? "Live" : "Offline"}
-      </span>
-    </div>
+      {connected ? "Live" : "Offline"}
+    </Badge>
   );
 }

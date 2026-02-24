@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { Separator } from "@/components/ui/separator";
 import { SSEIndicator } from "./SSEIndicator";
 
 export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-base/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center">
             <Image
               src="/logo_dark.svg"
@@ -18,6 +19,7 @@ export function Header() {
               className="h-5 w-auto"
             />
           </Link>
+          <Separator orientation="vertical" className="!h-5 bg-border" />
           <nav className="flex items-center gap-4">
             <Link
               href="/"

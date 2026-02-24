@@ -109,9 +109,9 @@ export default function EventDetailPage() {
 
         {isLoading && (
           <div className="space-y-4">
-            <Skeleton variant="line" className="h-8 w-64" />
-            <Skeleton variant="line" className="h-5 w-48" />
-            <Skeleton variant="card" className="h-64" />
+            <Skeleton className="h-8 w-64 rounded" />
+            <Skeleton className="h-5 w-48 rounded" />
+            <Skeleton className="h-64 w-full rounded-lg" />
           </div>
         )}
 

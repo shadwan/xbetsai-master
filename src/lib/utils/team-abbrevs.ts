@@ -166,4 +166,26 @@ export function getLeagueFolder(league: string): string | null {
   return LEAGUE_TO_FOLDER[league] ?? null;
 }
 
+/**
+ * Get team location and nickname separately.
+ * "Philadelphia 76ers" → { location: "Philadelphia", nickname: "76ers" }
+ */
+export function getTeamParts(
+  league: string,
+  teamName: string,
+): { location: string; nickname: string } {
+  const team = findTeamInManifest(league, teamName);
+  if (team) {
+    return { location: team.location, nickname: team.nickname };
+  }
+  // Fallback: split on last space
+  const parts = teamName.trim().split(/\s+/);
+  if (parts.length > 1) {
+    const nickname = parts[parts.length - 1];
+    const location = parts.slice(0, -1).join(" ");
+    return { location, nickname };
+  }
+  return { location: "", nickname: teamName };
+}
+
 export { LEAGUE_TO_FOLDER };

@@ -60,7 +60,7 @@ export function LineChart({ eventId }: LineChartProps) {
   }, [data]);
 
   if (isLoading) {
-    return <Skeleton variant="card" className="h-72" />;
+    return <Skeleton className="h-72 w-full rounded-lg" />;
   }
 
   if (isError || chartData.length === 0) {

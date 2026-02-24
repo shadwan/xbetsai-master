@@ -1,14 +1,21 @@
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
 interface ArbBadgeProps {
   profitPercentage: number;
   className?: string;
 }
 
-export function ArbBadge({ profitPercentage, className = "" }: ArbBadgeProps) {
+export function ArbBadge({ profitPercentage, className }: ArbBadgeProps) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full bg-neon-yellow/15 border border-neon-yellow/30 px-2 py-0.5 text-xs font-semibold text-neon-yellow ${className}`}
+    <Badge
+      variant="outline"
+      className={cn(
+        "border-neon-yellow/30 bg-neon-yellow/15 text-neon-yellow",
+        className,
+      )}
     >
       SUREBET +{(profitPercentage ?? 0).toFixed(1)}%
-    </span>
+    </Badge>
   );
 }

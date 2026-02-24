@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/src/components/Header";
 import { SportTabs } from "@/src/components/SportTabs";
-import { MarketToggle } from "@/src/components/MarketToggle";
 import { EventCard } from "@/src/components/EventCard";
+import { LeagueLogo } from "@/src/components/LeagueLogo";
 import { OddsGridSkeleton } from "@/src/components/Skeleton";
 import { useOdds } from "@/src/lib/hooks/use-odds";
 import { useEvents } from "@/src/lib/hooks/use-events";
@@ -18,7 +18,6 @@ import { getStartTime, getLeagueSlug } from "@/src/lib/utils/odds";
 import type { ConsolidatedOddsEvent, ValueBet, ArbitrageBet } from "@/src/lib/odds-api/types";
 import type { Event } from "odds-api-io";
 
-type MarketType = "ML" | "Spread" | "Totals";
 type TimeFilter = "live" | "today" | "upcoming";
 
 const TIME_FILTERS: TimeFilter[] = ["live", "today", "upcoming"];
@@ -61,7 +60,6 @@ function DashboardContent() {
   const searchParams = useSearchParams();
 
   const sport = searchParams.get("sport") ?? "all";
-  const market = (searchParams.get("market") as MarketType) ?? "ML";
 
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -87,12 +85,6 @@ function DashboardContent() {
     } else {
       params.set("sport", s);
     }
-    router.replace(`/?${params.toString()}`);
-  }
-
-  function setMarket(m: MarketType) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("market", m);
     router.replace(`/?${params.toString()}`);
   }
 
@@ -157,7 +149,6 @@ function DashboardContent() {
   }, [sortedOdds, now, timeFilter]);
 
   const grouped = useMemo(() => {
-    if (sport !== "all") return null;
     const map = new Map<string, ConsolidatedOddsEvent[]>();
     for (const e of filteredOdds) {
       const league = getLeagueSlug(e.event) || "unknown";
@@ -166,7 +157,7 @@ function DashboardContent() {
       map.set(league, arr);
     }
     return map;
-  }, [sport, filteredOdds]);
+  }, [filteredOdds]);
 
   const leagueDisplayName = (slug: string) =>
     SPORTS.find((s) => s.leagueSlug === slug)?.displayName ?? slug;
@@ -193,7 +184,6 @@ function DashboardContent() {
               eventCounts={eventCounts ?? undefined}
             />
           </div>
-          <MarketToggle active={market} onChange={setMarket} />
         </div>
 
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
@@ -230,19 +220,24 @@ function DashboardContent() {
           </div>
         )}
 
-        {!oddsLoading && filteredOdds.length > 0 && grouped && (
-          <div className="space-y-6">
+        {!oddsLoading && filteredOdds.length > 0 && (
+          <div className="space-y-8">
             {Array.from(grouped.entries()).map(([league, events]) => (
               <section key={league}>
-                <h2 className="mb-3 text-sm font-semibold text-text-secondary uppercase tracking-wide">
-                  {leagueDisplayName(league)}
-                </h2>
-                <div className="space-y-3">
+                <div className="mb-4 flex items-center gap-2.5">
+                  <LeagueLogo league={league} size={24} />
+                  <h2 className="text-base font-bold text-text-primary uppercase tracking-wide">
+                    {leagueDisplayName(league)}
+                  </h2>
+                  <span className="text-xs font-medium text-text-tertiary">
+                    {events.length} {events.length === 1 ? "game" : "games"}
+                  </span>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {events.map((e) => (
                     <Link key={e.event.id} href={`/events/${e.event.id}`} className="block">
                       <EventCard
                         event={e}
-                        activeMarket={market}
                         valueBets={valueBetsByEvent.get(e.event.id)}
                         arbBets={arbBetsByEvent.get(e.event.id)}
                       />
@@ -250,21 +245,6 @@ function DashboardContent() {
                   ))}
                 </div>
               </section>
-            ))}
-          </div>
-        )}
-
-        {!oddsLoading && filteredOdds.length > 0 && !grouped && (
-          <div className="space-y-3">
-            {filteredOdds.map((e) => (
-              <Link key={e.event.id} href={`/events/${e.event.id}`} className="block">
-                <EventCard
-                  event={e}
-                  activeMarket={market}
-                  valueBets={valueBetsByEvent.get(e.event.id)}
-                  arbBets={arbBetsByEvent.get(e.event.id)}
-                />
-              </Link>
             ))}
           </div>
         )}
