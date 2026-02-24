@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ConsolidatedOddsEvent, ArbitrageBet, ValueBet } from "@/src/lib/odds-api/types";
 import type { Event } from "odds-api-io";
-import { normalizeValueBet, normalizeArbBet } from "@/src/lib/utils/odds";
 
 // Module-level connected state for useSSEStatus
 let _connected = false;
@@ -47,24 +46,49 @@ export function useSSE(): void {
 
     es.addEventListener("odds", (e: MessageEvent) => {
       const payload: ConsolidatedOddsEvent = JSON.parse(e.data);
-      queryClient.setQueryData(["odds", String(payload.event.id)], payload);
-      queryClient.invalidateQueries({ queryKey: ["odds"] });
+      const eid = String(payload.event.id);
+
+      // Update single-event query
+      queryClient.setQueryData(["odds", eid], payload);
+
+      // Merge into every list query (["odds", { sport }]) in-place
+      queryClient.setQueriesData<ConsolidatedOddsEvent[]>(
+        { queryKey: ["odds"] },
+        (old) => {
+          if (!old || !Array.isArray(old)) return old;
+          const idx = old.findIndex((ev) => String(ev.event.id) === eid);
+          if (idx >= 0) {
+            const next = [...old];
+            next[idx] = payload;
+            return next;
+          }
+          return [...old, payload];
+        },
+      );
     });
 
     es.addEventListener("events", (e: MessageEvent) => {
       const payload: { leagueSlug: string; events: Event[] } = JSON.parse(e.data);
       queryClient.setQueryData(["events", payload.leagueSlug], payload.events);
-      queryClient.invalidateQueries({ queryKey: ["events"] });
+
+      // Merge into the all-events query in-place
+      queryClient.setQueryData<Record<string, Event[]>>(
+        ["events"],
+        (old) => {
+          if (!old) return { [payload.leagueSlug]: payload.events };
+          return { ...old, [payload.leagueSlug]: payload.events };
+        },
+      );
     });
 
     es.addEventListener("valuebets", (e: MessageEvent) => {
-      const raw: Record<string, unknown>[] = JSON.parse(e.data);
-      queryClient.setQueryData(["valueBets"], raw.map(normalizeValueBet) as ValueBet[]);
+      const data: ValueBet[] = JSON.parse(e.data);
+      queryClient.setQueryData(["valueBets"], data);
     });
 
     es.addEventListener("arbbets", (e: MessageEvent) => {
-      const raw: Record<string, unknown>[] = JSON.parse(e.data);
-      queryClient.setQueryData(["arbBets"], raw.map(normalizeArbBet) as ArbitrageBet[]);
+      const data: ArbitrageBet[] = JSON.parse(e.data);
+      queryClient.setQueryData(["arbBets"], data);
     });
 
     return () => {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, JetBrains_Mono } from "next/font/google";
 import QueryProvider from "@/src/providers/query-provider";
+import "motion-icons-react/style.css";
 import "./globals.css";
 
 const outfit = Outfit({

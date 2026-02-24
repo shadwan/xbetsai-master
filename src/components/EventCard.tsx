@@ -4,9 +4,8 @@ import { cn } from "@/lib/utils";
 import type { ConsolidatedOddsEvent, ArbitrageBet, ValueBet } from "@/src/lib/odds-api/types";
 import { getTeamNames, getStartTime, getLeagueSlug } from "@/src/lib/utils/odds";
 import { getTeamParts } from "@/src/lib/utils/team-abbrevs";
+import { MotionIcon } from "motion-icons-react";
 import { LiveBadge } from "./LiveBadge";
-import { EVBadge } from "./EVBadge";
-import { ArbBadge } from "./ArbBadge";
 import { TeamLogo } from "./TeamLogo";
 
 interface EventCardProps {
@@ -22,13 +21,26 @@ function isLive(event: ConsolidatedOddsEvent): boolean {
   return Date.now() >= new Date(st).getTime();
 }
 
-function formatDateLine(isoString: string): { date: string; time: string } {
-  if (!isoString) return { date: "", time: "" };
+function formatDateLine(isoString: string): { label: string; sublabel?: string; time: string } {
+  if (!isoString) return { label: "", time: "" };
   const d = new Date(isoString);
-  if (isNaN(d.getTime())) return { date: "", time: "" };
-  const date = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  if (isNaN(d.getTime())) return { label: "", time: "" };
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrowStart = new Date(todayStart.getTime() + 86_400_000);
+  const dayAfterStart = new Date(tomorrowStart.getTime() + 86_400_000);
+  const fullDate = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
   const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  return { date, time };
+
+  if (d >= todayStart && d < tomorrowStart) {
+    return { label: "Today", time };
+  }
+  if (d >= tomorrowStart && d < dayAfterStart) {
+    return { label: "Tomorrow", sublabel: fullDate, time };
+  }
+  return { label: fullDate, time };
 }
 
 export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
@@ -44,7 +56,7 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
   const hasEdge = !!eventValueBet;
   const hasArb = !!eventArbBet;
 
-  const { date, time } = formatDateLine(getStartTime(event.event));
+  const { label: dateLabel, sublabel, time } = formatDateLine(getStartTime(event.event));
 
   return (
     <div className={cn(
@@ -70,26 +82,55 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
 
       {/* Content */}
       <div className="relative z-10">
-        {/* Top: date/time + signal badges */}
-        <div className="flex items-center justify-between px-4 pt-3.5 pb-0">
-          <div className="flex items-center gap-1.5">
-            {hasEdge && <EVBadge valuePercentage={eventValueBet.valuePercentage} />}
-            {hasArb && <ArbBadge profitPercentage={eventArbBet.profitPercentage} />}
+        {/* Top: signal badges */}
+        {(hasEdge || hasArb || live) && (
+          <div className="flex items-center gap-1.5 px-4 pt-3 pb-0">
+            {hasEdge && (
+              <span
+                className="flex items-center gap-1 rounded-full bg-neon-green/10 px-2 py-0.5 ring-1 ring-neon-green/25"
+                title="+EV Opportunity"
+              >
+                <span className="text-[10px] font-extrabold tracking-wide text-neon-green">+EV</span>
+              </span>
+            )}
+            {hasArb && (
+              <span
+                className="flex items-center gap-1 rounded-full bg-neon-yellow/10 px-2 py-0.5 ring-1 ring-neon-yellow/25"
+                title="Sure — Guaranteed Profit"
+              >
+                <MotionIcon name="Trophy" size={14} color="var(--color-neon-yellow)" animation="none" />
+                <span className="text-[10px] font-extrabold tracking-wide text-neon-yellow">SURE</span>
+              </span>
+            )}
+            {live && <LiveBadge />}
           </div>
-          {live ? (
-            <LiveBadge />
-          ) : (
-            <div className="text-right">
-              <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                {date}
-              </p>
-              <p className="text-base font-extrabold text-text-primary">{time}</p>
+        )}
+
+        {/* Date & time — centered between top and matchup */}
+        {!live && (
+          <div className="flex flex-col items-center pt-3 pb-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wide text-text-secondary">
+                {dateLabel}
+              </span>
+              <span className="text-text-tertiary/50">·</span>
+              <span className="text-sm font-extrabold text-text-primary">
+                {time}
+              </span>
             </div>
-          )}
-        </div>
+            {sublabel && (
+              <span className="text-[10px] font-medium text-text-tertiary">
+                {sublabel}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Matchup hero */}
-        <div className="flex items-center justify-between px-5 pb-5 pt-1">
+        <div className={cn(
+          "flex items-center justify-between px-5 pb-5",
+          live && !hasEdge && !hasArb ? "pt-4" : "pt-1",
+        )}>
           {/* Away team */}
           <div className="flex flex-col items-center gap-2.5 min-w-0 flex-1">
             <TeamLogo league={leagueSlug} teamName={away} size={60} />

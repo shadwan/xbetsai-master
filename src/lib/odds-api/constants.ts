@@ -63,8 +63,8 @@ export const CACHE_TTL = {
   EVENTS: 5 * 60 * 1_000,            // 5 min — pre-match events refresh periodically
   ODDS_WS: 5 * 60 * 1_000,            // 5 min — same as REST; WS data stays until next refresh
   ODDS_REST: 5 * 60 * 1_000,          // 5 min — REST-fetched odds (initial + fallback)
-  VALUE_BETS: 10 * 1_000,            // 10 s  — recalculated every 5 s by API, time-sensitive
-  ARB_BETS: 10 * 1_000,              // 10 s  — same — time-sensitive
+  VALUE_BETS: 30 * 1_000,            // 30 s  — must outlast 15 s poll interval
+  ARB_BETS: 30 * 1_000,              // 30 s  — must outlast 15 s poll interval
   PROPS: 30 * 1_000,                 // 30 s  — on-demand, user-triggered
   HISTORICAL: 5 * 60 * 1_000,        // 5 min — doesn't change once recorded
   PARTICIPANTS: 24 * 60 * 60 * 1_000, // 24 h — daily refresh sufficient
