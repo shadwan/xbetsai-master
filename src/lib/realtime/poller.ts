@@ -16,6 +16,7 @@ import {
 import type {
   EventOdds,
   Event,
+  HistoricalEventOdds,
   WsMarket,
   WsOddsOutcome,
 } from "@/src/lib/odds-api/types";
@@ -481,6 +482,26 @@ export async function fetchPropsForEvent(eventId: string): Promise<EventOdds> {
 
   cache.set(`props:${eventId}`, result, CACHE_TTL.PROPS);
   return result;
+}
+
+// ── 10. Historical odds (on-demand) ──────────────────────────────────────
+
+export async function fetchHistoricalOdds(eventId: string): Promise<HistoricalEventOdds | null> {
+  try {
+    const cached = cache.get<HistoricalEventOdds>(`historical:${eventId}`);
+    if (cached) return cached;
+
+    const result = await oddsClient.getHistoricalOdds({
+      eventId,
+      bookmakers: BOOKMAKERS_PARAM,
+    });
+
+    cache.set(`historical:${eventId}`, result, CACHE_TTL.HISTORICAL);
+    return result;
+  } catch (err) {
+    console.warn(`[poller] Failed to fetch historical odds for ${eventId}:`, (err as Error).message);
+    return null;
+  }
 }
 
 // ── Public API ───────────────────────────────────────────────────────────
