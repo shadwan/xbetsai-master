@@ -53,48 +53,46 @@ function OpportunitiesContent() {
     router.replace(`/opportunities?${params.toString()}`);
   }
 
-  // Build event map for lookups
+  // Build event map for lookups — coerce IDs to string for consistent matching
   const eventMap = useMemo(() => {
     const map = new Map<string, Event>();
     if (!eventsData) return map;
     if (Array.isArray(eventsData)) {
       for (const e of eventsData) {
-        map.set(e.id, e);
+        map.set(String(e.id), e);
       }
     } else {
       for (const events of Object.values(eventsData as Record<string, Event[]>)) {
         for (const e of events) {
-          map.set(e.id, e);
+          map.set(String(e.id), e);
         }
       }
     }
     return map;
   }, [eventsData]);
 
-  // Filter + sort value bets
+  // Filter + sort value bets — only show bets for events in our sports list
   const filteredValueBets = useMemo(() => {
     if (!valueBets) return [];
-    let filtered = valueBets;
-    if (sport !== "all") {
-      filtered = filtered.filter((vb) => {
+    return valueBets
+      .filter((vb) => {
         const ev = eventMap.get(vb.eventId);
-        return ev ? getLeagueSlug(ev) === sport : false;
-      });
-    }
-    return [...filtered].sort((a, b) => b.valuePercentage - a.valuePercentage);
+        if (!ev) return false;
+        return sport === "all" || getLeagueSlug(ev) === sport;
+      })
+      .sort((a, b) => b.valuePercentage - a.valuePercentage);
   }, [valueBets, sport, eventMap]);
 
-  // Filter + sort arb bets
+  // Filter + sort arb bets — only show bets for events in our sports list
   const filteredArbBets = useMemo(() => {
     if (!arbBets) return [];
-    let filtered = arbBets;
-    if (sport !== "all") {
-      filtered = filtered.filter((ab) => {
+    return arbBets
+      .filter((ab) => {
         const ev = eventMap.get(ab.eventId);
-        return ev ? getLeagueSlug(ev) === sport : false;
-      });
-    }
-    return [...filtered].sort((a, b) => b.profitPercentage - a.profitPercentage);
+        if (!ev) return false;
+        return sport === "all" || getLeagueSlug(ev) === sport;
+      })
+      .sort((a, b) => b.profitPercentage - a.profitPercentage);
   }, [arbBets, sport, eventMap]);
 
   const isLoading = vbLoading || arbLoading;
@@ -176,15 +174,23 @@ function OpportunitiesContent() {
                     ? getTeamNames(ev)
                     : { home: "TBD", away: "TBD" };
                   const eventName = ev ? `${home} vs ${away}` : vb.eventId;
+                  // Resolve betSide ("home"/"away") to team name
+                  const betOnTeam =
+                    vb.outcome === "home" ? home
+                    : vb.outcome === "away" ? away
+                    : vb.outcome; // "over"/"under" stay as-is
                   const american = decimalToAmerican(vb.odds);
                   const fairAmerican = decimalToAmerican(vb.fairOdds);
                   const fairProb = impliedProbability(vb.fairOdds);
                   const kellyQuarter =
-                    ((fairProb * vb.odds - 1) / (vb.odds - 1) / 4) * 100;
+                    vb.odds > 1 ? ((fairProb * vb.odds - 1) / (vb.odds - 1) / 4) * 100 : 0;
                   const leagueSlug = ev ? getLeagueSlug(ev) : "";
                   const league = leagueSlug
                     ? SPORTS.find((s) => s.leagueSlug === leagueSlug)?.displayName ?? leagueSlug
                     : "";
+                  const lineDisplay = vb.marketLine != null ? ` ${vb.marketLine}` : "";
+                  const fmtAmerican = (n: number) =>
+                    n === 0 ? "—" : n > 0 ? `+${n}` : `${n}`;
 
                   return (
                     <Link
@@ -205,7 +211,7 @@ function OpportunitiesContent() {
                           <EVBadge valuePercentage={vb.valuePercentage} />
                         </div>
                         <div className="text-sm text-text-secondary">
-                          {vb.market} — {vb.outcome}
+                          {betOnTeam} · {vb.market}{lineDisplay}
                           {" · "}
                           <span className="text-text-tertiary">{vb.bookmaker}</span>
                         </div>
@@ -213,13 +219,13 @@ function OpportunitiesContent() {
                           <div>
                             <span className="text-text-tertiary">Book: </span>
                             <span className="font-mono text-text-primary">
-                              {american > 0 ? `+${american}` : american}
+                              {fmtAmerican(american)}
                             </span>
                           </div>
                           <div>
                             <span className="text-text-tertiary">Fair: </span>
                             <span className="font-mono text-text-primary">
-                              {fairAmerican > 0 ? `+${fairAmerican}` : fairAmerican}
+                              {fmtAmerican(fairAmerican)}
                             </span>
                           </div>
                           <div>
@@ -294,11 +300,16 @@ function OpportunitiesContent() {
                       <div className="flex flex-wrap gap-3 text-sm">
                         {arb.legs?.map((leg, j) => {
                           const am = decimalToAmerican(leg.odds);
+                          const side =
+                            leg.outcome === "home" ? arbHome
+                            : leg.outcome === "away" ? arbAway
+                            : leg.outcome;
+                          const fmtAm = am === 0 ? "—" : am > 0 ? `+${am}` : `${am}`;
                           return (
                             <span key={j} className="text-text-secondary">
                               {leg.bookmaker}:{" "}
                               <span className="font-mono text-text-primary">
-                                {leg.outcome} {am > 0 ? `+${am}` : am}
+                                {side} {fmtAm}
                               </span>
                             </span>
                           );

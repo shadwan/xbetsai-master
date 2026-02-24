@@ -38,8 +38,9 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
   const awayParts = getTeamParts(leagueSlug, away);
   const homeParts = getTeamParts(leagueSlug, home);
 
-  const eventValueBet = valueBets?.find((vb) => vb.eventId === event.event.id);
-  const eventArbBet = arbBets?.find((ab) => ab.eventId === event.event.id);
+  const eid = String(event.event.id);
+  const eventValueBet = valueBets?.find((vb) => vb.eventId === eid);
+  const eventArbBet = arbBets?.find((ab) => ab.eventId === eid);
   const hasEdge = !!eventValueBet;
   const hasArb = !!eventArbBet;
 

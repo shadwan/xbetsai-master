@@ -53,6 +53,7 @@ export function getLeagueSlug(event: Event): string {
  * d >= 2 → positive, d < 2 → negative.
  */
 export function decimalToAmerican(d: number): number {
+  if (!d || d <= 1) return 0;
   if (d >= 2) return Math.round((d - 1) * 100);
   return Math.round(-100 / (d - 1));
 }
@@ -69,6 +70,7 @@ export function americanToDecimal(a: number): number {
  * Implied probability from decimal odds (returns 0–1).
  */
 export function impliedProbability(d: number): number {
+  if (!d || d <= 0) return 0;
   return 1 / d;
 }
 
@@ -108,8 +110,16 @@ export function findBestOdds(
 }
 
 /**
- * Normalize a ValueBet from raw API shape (which may use snake_case or
- * different field names) into the shape our components expect.
+ * Normalize a ValueBet from the raw odds-api.io response into our app shape.
+ *
+ * Raw shape from API:
+ * {
+ *   id, eventId, expectedValue (e.g. 102.03 = 2.03% EV),
+ *   betSide ("home"|"away"|"over"|"under"),
+ *   market: { name: "ML"|"Spread"|"Totals", hdp?, home: "1.945", away: "2.058", ... },
+ *   bookmaker: "DraftKings",
+ *   bookmakerOdds: { home: "1.76", away: "2.10", hdp?, href },
+ * }
  */
 export function normalizeValueBet(raw: Record<string, unknown>): {
   eventId: string;
@@ -120,45 +130,98 @@ export function normalizeValueBet(raw: Record<string, unknown>): {
   odds: number;
   fairOdds: number;
   valuePercentage: number;
-  event?: unknown;
+  bookmakerHref?: string;
+  event?: Event;
 } {
+  const mkt = raw.market as Record<string, unknown> | string | undefined;
+  const bkOdds = raw.bookmakerOdds as Record<string, unknown> | undefined;
+  const betSide = String(raw.betSide ?? raw.outcome ?? "");
+
+  // Market name: either market.name (object) or market (string)
+  const marketName =
+    mkt && typeof mkt === "object" ? String(mkt.name ?? "") : String(mkt ?? "");
+
+  // Market line (hdp for spreads/totals)
+  const marketLine =
+    mkt && typeof mkt === "object" ? (mkt.hdp as number | undefined) : undefined;
+
+  // Bookmaker odds: bookmakerOdds[betSide] (string like "2.10")
+  const oddsVal = bkOdds && betSide ? parseFloat(String(bkOdds[betSide] ?? 0)) : 0;
+
+  // Fair odds: market[betSide] (string like "1.945")
+  const fairOddsVal =
+    mkt && typeof mkt === "object" && betSide ? parseFloat(String(mkt[betSide] ?? 0)) : 0;
+
+  // EV: expectedValue is like 102.03 meaning 2.03% edge; fall back to valuePercentage
+  const ev = raw.expectedValue ?? raw.valuePercentage ?? raw.value_percentage ?? raw.ev;
+  let valuePercentage = 0;
+  if (ev != null) {
+    const n = Number(ev);
+    // If > 10, it's the "100 + EV%" format (e.g. 102.03 → 2.03%)
+    valuePercentage = n > 10 ? n - 100 : n;
+  }
+
   return {
     eventId: String(raw.eventId ?? raw.event_id ?? ""),
     bookmaker: String(raw.bookmaker ?? ""),
-    market: String(raw.market ?? ""),
-    marketLine: (raw.marketLine ?? raw.market_line) as string | number | undefined,
-    outcome: String(raw.outcome ?? ""),
-    odds: Number(raw.odds ?? 0),
-    fairOdds: Number(raw.fairOdds ?? raw.fair_odds ?? raw.fairodds ?? 0),
-    valuePercentage: Number(raw.valuePercentage ?? raw.value_percentage ?? raw.ev ?? 0),
-    event: raw.event,
+    market: marketName,
+    marketLine: marketLine ?? (raw.marketLine as number | undefined),
+    outcome: betSide,
+    odds: oddsVal || Number(raw.odds ?? 0),
+    fairOdds: fairOddsVal || Number(raw.fairOdds ?? raw.fair_odds ?? 0),
+    valuePercentage,
+    bookmakerHref: bkOdds ? String(bkOdds.href ?? "") : undefined,
+    event: raw.event as Event | undefined,
   };
 }
 
 /**
- * Normalize an ArbitrageBet from raw API shape.
+ * Normalize an ArbitrageBet from the raw odds-api.io response.
+ *
+ * Raw shape from API:
+ * {
+ *   id, eventId, profitMargin (e.g. 6.83),
+ *   market: { name: "Totals", hdp: 2.5 },
+ *   legs: [{ bookmaker, side, odds: "1.63", href }],
+ *   optimalStakes: [{ bookmaker, side, stake: 655.39, potentialReturn }],
+ * }
  */
 export function normalizeArbBet(raw: Record<string, unknown>): {
   eventId: string;
   market: string;
   marketLine?: string | number;
   profitPercentage: number;
-  legs: Array<{ outcome: string; bookmaker: string; odds: number; stake?: number }>;
-  event?: unknown;
+  legs: Array<{ outcome: string; bookmaker: string; odds: number; stake?: number; href?: string }>;
+  event?: Event;
 } {
+  const mkt = raw.market as Record<string, unknown> | string | undefined;
+  const marketName =
+    mkt && typeof mkt === "object" ? String(mkt.name ?? "") : String(mkt ?? "");
+  const marketLine =
+    mkt && typeof mkt === "object" ? (mkt.hdp as number | undefined) : undefined;
+
   const rawLegs = (raw.legs ?? []) as Array<Record<string, unknown>>;
+  const rawStakes = (raw.optimalStakes ?? []) as Array<Record<string, unknown>>;
+
+  // Build a lookup for optimal stakes by bookmaker+side
+  const stakeMap = new Map<string, number>();
+  for (const s of rawStakes) {
+    const key = `${s.bookmaker}:${s.side}`;
+    stakeMap.set(key, Number(s.stake ?? 0));
+  }
+
   return {
     eventId: String(raw.eventId ?? raw.event_id ?? ""),
-    market: String(raw.market ?? ""),
-    marketLine: (raw.marketLine ?? raw.market_line) as string | number | undefined,
-    profitPercentage: Number(raw.profitPercentage ?? raw.profit_percentage ?? raw.profit ?? 0),
+    market: marketName,
+    marketLine: marketLine ?? (raw.marketLine as number | undefined),
+    profitPercentage: Number(raw.profitMargin ?? raw.profitPercentage ?? raw.profit_percentage ?? 0),
     legs: rawLegs.map((leg) => ({
-      outcome: String(leg.outcome ?? ""),
+      outcome: String(leg.side ?? leg.outcome ?? ""),
       bookmaker: String(leg.bookmaker ?? ""),
-      odds: Number(leg.odds ?? 0),
-      stake: leg.stake != null ? Number(leg.stake) : undefined,
+      odds: parseFloat(String(leg.odds ?? 0)),
+      stake: stakeMap.get(`${leg.bookmaker}:${leg.side}`) ?? undefined,
     })),
-    event: raw.event,
+    event: raw.event as Event | undefined,
   };
 }
 

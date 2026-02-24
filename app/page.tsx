@@ -238,8 +238,8 @@ function DashboardContent() {
                     <Link key={e.event.id} href={`/events/${e.event.id}`} className="block">
                       <EventCard
                         event={e}
-                        valueBets={valueBetsByEvent.get(e.event.id)}
-                        arbBets={arbBetsByEvent.get(e.event.id)}
+                        valueBets={valueBetsByEvent.get(String(e.event.id))}
+                        arbBets={arbBetsByEvent.get(String(e.event.id))}
                       />
                     </Link>
                   ))}

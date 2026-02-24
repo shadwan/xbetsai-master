@@ -19,7 +19,9 @@ import type {
   HistoricalEventOdds,
   WsMarket,
   WsOddsOutcome,
+  ArbitrageBet,
 } from "@/src/lib/odds-api/types";
+import { normalizeValueBet, normalizeArbBet } from "@/src/lib/utils/odds";
 
 // ── Module state ─────────────────────────────────────────────────────────
 
@@ -351,7 +353,10 @@ async function pollValueBets(): Promise<void> {
 
   for (const bookmaker of BOOKMAKERS) {
     try {
-      const bets = await oddsClient.getValueBets({ bookmaker });
+      const rawBets = await oddsClient.getValueBets({ bookmaker });
+      const bets = (rawBets as unknown as Record<string, unknown>[]).map(
+        (b) => normalizeValueBet(b),
+      );
       const changed = cache.setIfChanged(
         `value-bets:${bookmaker}`,
         bets,
@@ -378,14 +383,17 @@ async function pollValueBets(): Promise<void> {
 /** 7. Arb bets poller — single call. */
 async function pollArbBets(): Promise<void> {
   try {
-    const bets = await oddsClient.getArbitrageBets({
+    const rawBets = await oddsClient.getArbitrageBets({
       bookmakers: BOOKMAKERS_PARAM,
     });
+    const bets = (rawBets as unknown as Record<string, unknown>[]).map(
+      (b) => normalizeArbBet(b),
+    );
 
     const changed = cache.setIfChanged("arb-bets", bets, CACHE_TTL.ARB_BETS);
     if (changed) {
       console.log(`[poller] Arb bets updated: ${bets.length} bets`);
-      emit("arbbets:updated", bets);
+      emit("arbbets:updated", bets as ArbitrageBet[]);
     }
   } catch (err) {
     console.warn("[poller] Failed to fetch arb bets:", (err as Error).message);
