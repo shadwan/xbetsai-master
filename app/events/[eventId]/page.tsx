@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { Header } from "@/src/components/Header";
-import { LiveBadge } from "@/src/components/LiveBadge";
+import { EventHero } from "@/src/components/event-detail/EventHero";
 import { EVBadge } from "@/src/components/EVBadge";
 import { ArbBadge } from "@/src/components/ArbBadge";
 import { OddsCell } from "@/src/components/OddsCell";
@@ -15,14 +14,11 @@ import { Skeleton } from "@/src/components/Skeleton";
 import { useEventOdds } from "@/src/lib/hooks/use-odds";
 import { useValueBets } from "@/src/lib/hooks/use-value-bets";
 import { useArbBets } from "@/src/lib/hooks/use-arb-bets";
-import { SPORTS, BOOKMAKERS } from "@/src/lib/odds-api/constants";
+import { BOOKMAKERS } from "@/src/lib/odds-api/constants";
 import {
   findBestOdds,
   decimalToAmerican,
   impliedProbability,
-  getTeamNames,
-  getStartTime,
-  getLeagueSlug,
 } from "@/src/lib/utils/odds";
 import { computeMarketConsensus, getBookmakerBreakdown } from "@/src/lib/utils/predictions";
 import { PredictionBar } from "@/src/components/PredictionBar";
@@ -52,17 +48,6 @@ function outcomeKeysForMarket(market: string): { key: string; label: string }[] 
   }
 }
 
-function formatStartTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const { data: eventOdds, isLoading } = useEventOdds(eventId);
@@ -79,41 +64,15 @@ export default function EventDetailPage() {
     [arbBets, eventId],
   );
 
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const live = eventOdds
-    ? eventOdds.event.status === "live" ||
-      (getStartTime(eventOdds.event) ? now >= new Date(getStartTime(eventOdds.event)).getTime() : false)
-    : false;
-
-  const leagueDisplay = eventOdds
-    ? SPORTS.find((s) => s.leagueSlug === getLeagueSlug(eventOdds.event))?.displayName ??
-      getLeagueSlug(eventOdds.event)
-    : "";
-
-  const teamNames = eventOdds ? getTeamNames(eventOdds.event) : null;
-
   return (
     <>
       <Header />
       <main className="mx-auto max-w-7xl px-4 py-6 space-y-6">
-        {/* Back link */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary transition-colors"
-        >
-          ← Back
-        </Link>
-
         {isLoading && (
           <div className="space-y-4">
             <Skeleton className="h-8 w-64 rounded" />
             <Skeleton className="h-5 w-48 rounded" />
-            <Skeleton className="h-64 w-full rounded-lg" />
+            <Skeleton className="h-48 w-full rounded-2xl" />
           </div>
         )}
 
@@ -125,20 +84,8 @@ export default function EventDetailPage() {
 
         {eventOdds && (
           <>
-            {/* Event header */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold text-text-primary">
-                  {teamNames!.home} vs {teamNames!.away}
-                </h1>
-                {live && <LiveBadge />}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-text-secondary">
-                <span>{leagueDisplay}</span>
-                <span>·</span>
-                <span>{formatStartTime(getStartTime(eventOdds.event))}</span>
-              </div>
-            </div>
+            {/* Event Hero Header */}
+            <EventHero event={eventOdds} />
 
             {/* Market consensus predictions */}
             {(() => {
