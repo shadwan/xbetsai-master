@@ -2,11 +2,12 @@
 
 import type { ConsolidatedOddsEvent, ArbitrageBet, ValueBet } from "@/src/lib/odds-api/types";
 import { BOOKMAKERS } from "@/src/lib/odds-api/constants";
-import { findBestOdds, formatLine, getTeamNames, getStartTime } from "@/src/lib/utils/odds";
+import { findBestOdds, formatLine, getTeamNames, getStartTime, getLeagueSlug } from "@/src/lib/utils/odds";
 import { OddsCell } from "./OddsCell";
 import { LiveBadge } from "./LiveBadge";
 import { EVBadge } from "./EVBadge";
 import { ArbBadge } from "./ArbBadge";
+import { TeamLogo } from "./TeamLogo";
 
 type MarketType = "ML" | "Spread" | "Totals";
 
@@ -61,6 +62,7 @@ export function EventCard({ event, activeMarket, valueBets, arbBets }: EventCard
   const outcomeRows = getOutcomeRows(activeMarket);
   const live = isLive(event);
   const { home, away } = getTeamNames(event.event);
+  const leagueSlug = getLeagueSlug(event.event);
 
   // Find EV/arb badges for this event
   const eventValueBet = valueBets?.find((vb) => vb.eventId === event.event.id);
@@ -94,9 +96,13 @@ export function EventCard({ event, activeMarket, valueBets, arbBets }: EventCard
       {/* Header */}
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="truncate text-sm font-semibold text-text-primary">
-            {home} vs {away}
-          </span>
+          <div className="flex items-center gap-1.5 truncate">
+            <TeamLogo league={leagueSlug} teamName={home} size={20} className="shrink-0" />
+            <span className="text-sm font-semibold text-text-primary">{home}</span>
+            <span className="text-xs text-text-tertiary">vs</span>
+            <TeamLogo league={leagueSlug} teamName={away} size={20} className="shrink-0" />
+            <span className="text-sm font-semibold text-text-primary">{away}</span>
+          </div>
           {eventValueBet && <EVBadge valuePercentage={eventValueBet.valuePercentage} />}
           {eventArbBet && <ArbBadge profitPercentage={eventArbBet.profitPercentage} />}
         </div>
