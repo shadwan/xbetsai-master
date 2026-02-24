@@ -121,10 +121,10 @@ function transformOddsToCache(
   return result;
 }
 
-/** Get events that are live or starting within 24 hours. */
-function getUpcoming24hAndLiveEvents(): Event[] {
+/** Get events that are live or starting within 48 hours. */
+function getUpcoming48hAndLiveEvents(): Event[] {
   const now = Date.now();
-  const in24h = now + 24 * 60 * 60 * 1_000;
+  const in48h = now + 48 * 60 * 60 * 1_000;
   const events: Event[] = [];
 
   for (const s of SPORTS) {
@@ -141,7 +141,7 @@ function getUpcoming24hAndLiveEvents(): Event[] {
         // API may return `date` instead of `startTime`
         const dateStr = e.startTime || (e as unknown as { date: string }).date;
         const start = new Date(dateStr).getTime();
-        if (!isNaN(start) && start <= in24h && start >= now) {
+        if (!isNaN(start) && start <= in48h && start >= now) {
           events.push(e);
         }
       }
@@ -248,7 +248,7 @@ function storeMultiEventOdds(results: unknown[]): void {
 async function fetchInitialOdds(eventIds?: string[]): Promise<void> {
   const events = eventIds
     ? eventIds
-    : getUpcoming24hAndLiveEvents().map((e) => String(e.id));
+    : getUpcoming48hAndLiveEvents().map((e) => String(e.id));
 
   if (events.length === 0) return;
 
@@ -304,7 +304,7 @@ async function fetchParticipants(): Promise<void> {
 async function pollEvents(): Promise<void> {
   const stagger = POLL_INTERVAL.EVENTS / SPORTS.length;
   const existingEventIds = new Set(
-    getUpcoming24hAndLiveEvents().map((e) => e.id),
+    getUpcoming48hAndLiveEvents().map((e) => e.id),
   );
 
   for (const s of SPORTS) {
@@ -338,7 +338,7 @@ async function pollEvents(): Promise<void> {
   }
 
   // Check for newly entered events that need odds
-  const currentEventIds = getUpcoming24hAndLiveEvents().map((e) => e.id);
+  const currentEventIds = getUpcoming48hAndLiveEvents().map((e) => e.id);
   const newEventIds = currentEventIds.filter((id) => !existingEventIds.has(id));
 
   if (newEventIds.length > 0) {
@@ -403,7 +403,7 @@ async function pollArbBets(): Promise<void> {
 /** 8. WS fallback — polls odds via REST when WS is disconnected. */
 function pollOddsFallback(): void {
   const run = async () => {
-    const liveEvents = getUpcoming24hAndLiveEvents().filter(
+    const liveEvents = getUpcoming48hAndLiveEvents().filter(
       (e) => e.status === "live",
     );
 
@@ -525,7 +525,7 @@ export async function startPollers(): Promise<void> {
     // 2. Events (populates cache, detects active sports)
     await fetchAllEvents();
 
-    // 3. Initial odds snapshot (live + next 24h)
+    // 3. Initial odds snapshot (live + next 48h)
     await fetchInitialOdds();
 
     // 4. Participants
