@@ -45,9 +45,11 @@ interface EventListingProps {
   arbBets: ArbitrageBet[] | undefined;
   /** When true, skip per-league group headers (used on single-league pages). */
   singleLeague?: boolean;
+  /** When true, only show live + today events with no time filter buttons (home page). */
+  todayOnly?: boolean;
 }
 
-export function EventListing({ odds, isLoading, valueBets, arbBets, singleLeague }: EventListingProps) {
+export function EventListing({ odds, isLoading, valueBets, arbBets, singleLeague, todayOnly }: EventListingProps) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 60_000);
@@ -100,12 +102,19 @@ export function EventListing({ odds, isLoading, valueBets, arbBets, singleLeague
       counts[cat]++;
       buckets[cat].push(e);
     }
+
+    if (todayOnly) {
+      // Combine live + today, no filter buttons
+      const combined = [...buckets.live, ...buckets.today];
+      return { timeCounts: counts, filteredOdds: combined, activeTimeFilter: "today" as TimeFilter };
+    }
+
     const auto: TimeFilter = counts.live > 0 ? "live"
       : counts.today > 0 ? "today"
       : "upcoming";
     const effective = timeFilter ?? auto;
     return { timeCounts: counts, filteredOdds: buckets[effective] ?? [], activeTimeFilter: effective };
-  }, [sortedOdds, now, timeFilter]);
+  }, [sortedOdds, now, timeFilter, todayOnly]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, ConsolidatedOddsEvent[]>();
@@ -123,36 +132,40 @@ export function EventListing({ odds, isLoading, valueBets, arbBets, singleLeague
 
   return (
     <>
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-        {TIME_FILTERS.filter((tf) => timeCounts[tf] > 0).map((tf) => (
-          <button
-            key={tf}
-            onClick={() => setTimeFilter(tf)}
-            className={`flex items-center whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              activeTimeFilter === tf
-                ? "bg-elevated text-neon-cyan ring-1 ring-neon-cyan/40"
-                : "bg-surface text-text-secondary hover:bg-hover hover:text-text-primary"
-            }`}
-          >
-            {tf === "live" && (
-              <span className="relative mr-1.5 flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
-              </span>
-            )}
-            {TIME_FILTER_LABELS[tf]}
-            <span className="ml-1.5 text-xs opacity-60">{timeCounts[tf]}</span>
-          </button>
-        ))}
-      </div>
+      {/* Time filter buttons — hidden when todayOnly */}
+      {!todayOnly && (
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+          {TIME_FILTERS.filter((tf) => timeCounts[tf] > 0).map((tf) => (
+            <button
+              key={tf}
+              onClick={() => setTimeFilter(tf)}
+              className={`flex items-center whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                activeTimeFilter === tf
+                  ? "bg-elevated text-neon-cyan ring-1 ring-neon-cyan/40"
+                  : "bg-surface text-text-secondary hover:bg-hover hover:text-text-primary"
+              }`}
+            >
+              {tf === "live" && (
+                <span className="relative mr-1.5 flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
+              )}
+              {TIME_FILTER_LABELS[tf]}
+              <span className="ml-1.5 text-xs opacity-60">{timeCounts[tf]}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {isLoading && <OddsGridSkeleton rows={6} />}
 
       {!isLoading && filteredOdds.length === 0 && (
         <div className="rounded-lg border border-border bg-surface px-6 py-16 text-center">
           <p className="text-text-secondary">
-            No {TIME_FILTER_LABELS[activeTimeFilter].toLowerCase()} events
-            {sortedOdds.length > 0 ? " — try another time filter" : " found"}.
+            {todayOnly
+              ? "No events today."
+              : `No ${TIME_FILTER_LABELS[activeTimeFilter].toLowerCase()} events${sortedOdds.length > 0 ? " — try another time filter" : " found"}.`}
           </p>
         </div>
       )}

@@ -5,6 +5,8 @@ const LEAGUE_LOGO_MAP: Record<string, string> = {
   "usa-nfl": "/logos/leagues/nfl.png",
   "usa-mlb": "/logos/leagues/mlb.png",
   "usa-nhl": "/logos/leagues/nhl.png",
+  "usa-ncaaf": "/logos/leagues/ncaaf.png",
+  "usa-ncaab": "/logos/leagues/ncaam.png",
 };
 
 interface LeagueLogoProps {

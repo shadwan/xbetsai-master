@@ -36,11 +36,33 @@ export const SPORTS = [
   { displayName: "NBA", sportSlug: "basketball", leagueSlug: "usa-nba", season: "Oct-Jun" },
   { displayName: "MLB", sportSlug: "baseball", leagueSlug: "usa-mlb", season: "Mar-Nov" },
   { displayName: "NHL", sportSlug: "ice-hockey", leagueSlug: "usa-nhl", season: "Oct-Jun" },
-  { displayName: "NCAAF", sportSlug: "american-football", leagueSlug: "usa-ncaaf", season: "Aug-Jan" },
-  { displayName: "NCAAMB", sportSlug: "basketball", leagueSlug: "usa-ncaab", season: "Nov-Apr" },
+  { displayName: "CFB", sportSlug: "american-football", leagueSlug: "usa-ncaaf", season: "Aug-Jan" },
+  { displayName: "CBB", sportSlug: "basketball", leagueSlug: "usa-ncaab", season: "Nov-Apr" },
 ] as const satisfies readonly SportConfig[];
 
 export type LeagueSlug = (typeof SPORTS)[number]["leagueSlug"];
+
+// ── Season helpers ──────────────────────────────────────────────────────────
+
+const MONTH_MAP: Record<string, number> = {
+  Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+  Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12,
+};
+
+/** Check if a given month (1-12) falls within a "Mon-Mon" season range. */
+export function isInSeason(season: string, now = new Date()): boolean {
+  const [startStr, endStr] = season.split("-");
+  const start = MONTH_MAP[startStr];
+  const end = MONTH_MAP[endStr];
+  if (!start || !end) return true; // fallback: assume in-season
+  const month = now.getMonth() + 1; // 1-indexed
+  if (start <= end) {
+    // e.g. Mar-Nov
+    return month >= start && month <= end;
+  }
+  // Wraps around year, e.g. Sep-Feb
+  return month >= start || month <= end;
+}
 
 // ── WebSocket filters ───────────────────────────────────────────────────────
 
