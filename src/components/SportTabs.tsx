@@ -1,27 +1,39 @@
 "use client";
 
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { SPORTS } from "@/src/lib/odds-api/constants";
 import { LeagueLogo } from "./LeagueLogo";
 
 interface SportTabsProps {
-  activeSport: string;
-  onSportChange: (leagueSlug: string) => void;
+  activeLeague?: string; // lowercase display name from URL, undefined = home/all
   eventCounts?: Record<string, number>;
 }
 
-export function SportTabs({ activeSport, onSportChange, eventCounts }: SportTabsProps) {
+export function SportTabs({ activeLeague, eventCounts }: SportTabsProps) {
   return (
     <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+      <Link
+        href="/"
+        className={cn(
+          "whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+          !activeLeague
+            ? "bg-elevated text-neon-cyan ring-1 ring-neon-cyan/40"
+            : "bg-surface text-text-secondary hover:bg-hover hover:text-text-primary",
+        )}
+      >
+        All
+      </Link>
       {SPORTS.map((sport) => {
-        const isActive = activeSport === sport.leagueSlug;
+        const slug = sport.displayName.toLowerCase();
+        const isActive = activeLeague === slug;
         const count = eventCounts?.[sport.leagueSlug];
 
         return (
-          <button
+          <Link
             key={sport.leagueSlug}
-            onClick={() => onSportChange(sport.leagueSlug)}
+            href={`/${slug}`}
             className={cn(
               "flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
               isActive
@@ -44,7 +56,7 @@ export function SportTabs({ activeSport, onSportChange, eventCounts }: SportTabs
                 {count}
               </Badge>
             )}
-          </button>
+          </Link>
         );
       })}
     </div>

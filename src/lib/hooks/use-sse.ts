@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ConsolidatedOddsEvent, ArbitrageBet, ValueBet } from "@/src/lib/odds-api/types";
 import type { Event } from "odds-api-io";
+import { getLeagueSlug } from "@/src/lib/utils/odds";
 
 // Module-level connected state for useSSEStatus
 let _connected = false;
@@ -51,20 +52,33 @@ export function useSSE(): void {
       // Update single-event query
       queryClient.setQueryData(["odds", eid], payload);
 
-      // Merge into every list query (["odds", { sport }]) in-place
-      queryClient.setQueriesData<ConsolidatedOddsEvent[]>(
-        { queryKey: ["odds"] },
-        (old) => {
-          if (!old || !Array.isArray(old)) return old;
-          const idx = old.findIndex((ev) => String(ev.event.id) === eid);
-          if (idx >= 0) {
-            const next = [...old];
-            next[idx] = payload;
-            return next;
-          }
-          return [...old, payload];
-        },
-      );
+      // Merge into list queries (["odds", { sport }]) in-place
+      const eventLeague = getLeagueSlug(payload.event);
+      const queries = queryClient.getQueryCache().findAll({ queryKey: ["odds"] });
+
+      for (const query of queries) {
+        const key = query.queryKey;
+        // Skip single-event queries (["odds", "123"]) — already handled above
+        if (typeof key[1] === "string") continue;
+
+        const old = query.state.data as ConsolidatedOddsEvent[] | undefined;
+        if (!old || !Array.isArray(old)) continue;
+
+        // Check if this is a sport-filtered query
+        const filter = key[1] as { sport?: string } | undefined;
+        const querySport = filter?.sport;
+
+        const idx = old.findIndex((ev) => String(ev.event.id) === eid);
+        if (idx >= 0) {
+          // Event already in this list — update it
+          const next = [...old];
+          next[idx] = payload;
+          queryClient.setQueryData(key, next);
+        } else if (!querySport || querySport === eventLeague) {
+          // Only append if event belongs to this sport filter (or no filter)
+          queryClient.setQueryData(key, [...old, payload]);
+        }
+      }
     });
 
     es.addEventListener("events", (e: MessageEvent) => {

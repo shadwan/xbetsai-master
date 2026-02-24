@@ -25,7 +25,7 @@ export function Header() {
               href="/"
               className="text-sm text-text-secondary hover:text-neon-cyan transition-colors"
             >
-              Dashboard
+              Home
             </Link>
             <Link
               href="/opportunities"

@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/src/components/Header";
-import { SportTabs } from "@/src/components/SportTabs";
+import { LeagueLogo } from "@/src/components/LeagueLogo";
 import { EVBadge } from "@/src/components/EVBadge";
 import { ArbBadge } from "@/src/components/ArbBadge";
 import { StakeCalculator } from "@/src/components/StakeCalculator";
@@ -121,17 +121,20 @@ function OpportunitiesContent() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-            <button
-              onClick={() => setSport("all")}
-              className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                sport === "all"
-                  ? "bg-elevated text-neon-cyan ring-1 ring-neon-cyan/40"
-                  : "bg-surface text-text-secondary hover:bg-hover hover:text-text-primary"
-              }`}
-            >
-              All
-            </button>
-            <SportTabs activeSport={sport} onSportChange={setSport} />
+            {[{ displayName: "All", leagueSlug: "all" }, ...SPORTS].map((s) => (
+              <button
+                key={s.leagueSlug}
+                onClick={() => setSport(s.leagueSlug)}
+                className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  sport === s.leagueSlug
+                    ? "bg-elevated text-neon-cyan ring-1 ring-neon-cyan/40"
+                    : "bg-surface text-text-secondary hover:bg-hover hover:text-text-primary"
+                }`}
+              >
+                {s.leagueSlug !== "all" && <LeagueLogo league={s.leagueSlug} size={16} />}
+                {s.displayName}
+              </button>
+            ))}
           </div>
 
           {/* Filter tabs */}

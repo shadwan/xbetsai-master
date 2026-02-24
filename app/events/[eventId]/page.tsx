@@ -104,7 +104,7 @@ export default function EventDetailPage() {
           href="/"
           className="inline-flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary transition-colors"
         >
-          ← Back to Dashboard
+          ← Back
         </Link>
 
         {isLoading && (
