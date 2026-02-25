@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, TrendingUp, ChevronDown, Eye, EyeOff } from "lucide-react";
+import { AlertTriangle, TrendingUp, ChevronDown, Eye, EyeOff, X } from "lucide-react";
 import { useProps } from "@/src/lib/hooks/use-props";
 import { useGameRoster } from "@/src/lib/hooks/use-game-roster";
 import { parsePropsEnhanced } from "@/src/lib/utils/props";
@@ -57,6 +57,323 @@ interface DisplayPlayer {
   edgeProps: PlayerProp[];
 }
 
+// ── Props Popup ─────────────────────────────────────────────────────────────
+
+function PropsPopup({
+  player,
+  league,
+  evPropKeys,
+  onClose,
+}: {
+  player: DisplayPlayer;
+  league: string;
+  evPropKeys: Set<string>;
+  onClose: () => void;
+}) {
+  const [showEdgesOnly, setShowEdgesOnly] = useState(true);
+  const [expandedProp, setExpandedProp] = useState<string | null>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  const displayProps = showEdgesOnly ? player.edgeProps : player.allProps;
+  const hasAnyProps = player.allProps.length > 0;
+
+  // Close on Escape
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={(e) => {
+        if (e.target === overlayRef.current) onClose();
+      }}
+    >
+      <div className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-border-bright/40 bg-[#0a1220] shadow-2xl">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute right-3 top-3 z-10 rounded-lg p-1.5 text-text-tertiary hover:bg-white/[0.06] hover:text-text-primary transition-colors"
+        >
+          <X size={18} />
+        </button>
+
+        {/* Player header */}
+        <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
+          <PlayerAvatar
+            playerName={player.name}
+            league={league}
+            size={52}
+            headshotUrl={player.rosterPlayer.headshotUrl}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-lg font-bold text-text-primary truncate">
+                {player.name}
+              </p>
+              {player.rosterPlayer.position && (
+                <span className="rounded bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-bold text-text-tertiary">
+                  {player.rosterPlayer.position}
+                </span>
+              )}
+              {player.rosterPlayer.jersey && (
+                <span className="text-xs text-text-tertiary">
+                  #{player.rosterPlayer.jersey}
+                </span>
+              )}
+            </div>
+            <p className="mt-0.5 text-xs text-text-tertiary">
+              {player.edgeProps.length > 0
+                ? `${player.edgeProps.length} edge${player.edgeProps.length !== 1 ? "s" : ""}`
+                : "No edges"}
+              {player.allProps.length > 0 && (
+                <span className="text-text-tertiary/50">
+                  {" "}/{" "}{player.allProps.length} prop{player.allProps.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* Edges / All segmented toggle */}
+        {hasAnyProps && (
+          <div className="flex justify-center px-5 py-3 border-b border-white/[0.04]">
+            <div className="inline-flex rounded-lg bg-white/[0.04] p-0.5 ring-1 ring-white/[0.08]">
+              <button
+                onClick={() => setShowEdgesOnly(true)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold transition-colors",
+                  showEdgesOnly
+                    ? "bg-neon-gold/15 text-neon-gold shadow-sm"
+                    : "text-text-tertiary hover:text-text-secondary",
+                )}
+              >
+                <EyeOff size={13} />
+                Edges only
+              </button>
+              <button
+                onClick={() => setShowEdgesOnly(false)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold transition-colors",
+                  !showEdgesOnly
+                    ? "bg-white/[0.1] text-text-primary shadow-sm"
+                    : "text-text-tertiary hover:text-text-secondary",
+                )}
+              >
+                <Eye size={13} />
+                All props
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Prop rows or empty state */}
+        {!hasAnyProps ? (
+          <div className="px-5 py-12 text-center">
+            <p className="text-sm text-text-secondary">
+              No props available for this player.
+            </p>
+          </div>
+        ) : displayProps.length === 0 ? (
+          <div className="px-5 py-12 text-center">
+            <p className="text-sm text-text-secondary">
+              No edge opportunities for this player.
+            </p>
+            <button
+              onClick={() => setShowEdgesOnly(false)}
+              className="mt-2 text-xs font-medium text-neon-gold hover:underline"
+            >
+              Show all {player.allProps.length} props
+            </button>
+          </div>
+        ) : (
+          <div>
+            {displayProps.map((prop) => {
+              const isEdgeProp = hasEdge(prop, evPropKeys);
+              const isExpanded = expandedProp === prop.propType;
+              const overBetter =
+                prop.bestOver && prop.bestUnder
+                  ? prop.bestOver.odds > prop.bestUnder.odds
+                  : false;
+              const underBetter =
+                prop.bestOver && prop.bestUnder
+                  ? prop.bestUnder.odds > prop.bestOver.odds
+                  : false;
+              const isEV = evPropKeys.has(
+                `${prop.propType}|${prop.consensusLine}`,
+              );
+
+              return (
+                <div
+                  key={prop.propType}
+                  className={cn(
+                    "border-b border-white/[0.04] last:border-b-0",
+                    !isEdgeProp && "opacity-50",
+                  )}
+                >
+                  <div className="px-5 py-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[13px] font-semibold text-text-primary">
+                        {prop.propType}
+                      </span>
+                      <span className="text-xs tabular-nums text-text-secondary">
+                        {prop.consensusLine}
+                      </span>
+                      {prop.hasLineDiscrepancy && (
+                        <span className="inline-flex items-center gap-0.5 rounded bg-neon-yellow/[0.1] px-1.5 py-0.5 text-[10px] font-bold text-neon-yellow ring-1 ring-neon-yellow/20">
+                          <AlertTriangle size={10} />
+                          LINE
+                        </span>
+                      )}
+                      {prop.hasOddsDiscrepancy && (
+                        <span className="rounded bg-blue-400/[0.1] px-1.5 py-0.5 text-[10px] font-bold text-blue-400 ring-1 ring-blue-400/20">
+                          VALUE
+                        </span>
+                      )}
+                      {isEV && (
+                        <span className="inline-flex items-center gap-0.5 rounded bg-neon-green/[0.1] px-1.5 py-0.5 text-[10px] font-bold text-neon-green ring-1 ring-neon-green/20">
+                          <TrendingUp size={10} />
+                          +EV
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div
+                        className={cn(
+                          "flex items-center justify-between rounded-lg px-2.5 py-1.5",
+                          overBetter
+                            ? "bg-neon-green/[0.06] ring-1 ring-neon-green/15"
+                            : "bg-white/[0.025] ring-1 ring-white/[0.05]",
+                        )}
+                      >
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+                          Over
+                        </span>
+                        <div className="text-right">
+                          <span
+                            className={cn(
+                              "text-base font-[900] tabular-nums",
+                              overBetter ? "text-neon-green" : "text-text-primary",
+                            )}
+                          >
+                            {prop.bestOver ? formatOdds(prop.bestOver.odds) : "\u2014"}
+                          </span>
+                          {prop.bestOver && (
+                            <span className="ml-1.5 text-[10px] text-text-tertiary">
+                              {abbreviateBookmaker(prop.bestOver.bookmaker)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div
+                        className={cn(
+                          "flex items-center justify-between rounded-lg px-2.5 py-1.5",
+                          underBetter
+                            ? "bg-neon-green/[0.06] ring-1 ring-neon-green/15"
+                            : "bg-white/[0.025] ring-1 ring-white/[0.05]",
+                        )}
+                      >
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+                          Under
+                        </span>
+                        <div className="text-right">
+                          <span
+                            className={cn(
+                              "text-base font-[900] tabular-nums",
+                              underBetter ? "text-neon-green" : "text-text-primary",
+                            )}
+                          >
+                            {prop.bestUnder ? formatOdds(prop.bestUnder.odds) : "\u2014"}
+                          </span>
+                          {prop.bestUnder && (
+                            <span className="ml-1.5 text-[10px] text-text-tertiary">
+                              {abbreviateBookmaker(prop.bestUnder.bookmaker)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {prop.lines.length > 1 && (
+                      <button
+                        onClick={() =>
+                          setExpandedProp(isExpanded ? null : prop.propType)
+                        }
+                        className="mt-1.5 flex w-full items-center justify-center gap-1 rounded py-0.5 text-[11px] font-medium text-text-tertiary hover:bg-white/[0.03] hover:text-text-secondary transition-colors"
+                      >
+                        {isExpanded ? "Hide" : `${prop.lines.length}`} books
+                        <ChevronDown
+                          size={12}
+                          className={cn(
+                            "transition-transform",
+                            isExpanded && "rotate-180",
+                          )}
+                        />
+                      </button>
+                    )}
+                  </div>
+
+                  {isExpanded && prop.lines.length > 1 && (
+                    <div className="border-t border-white/[0.03] bg-white/[0.01] px-5 py-2">
+                      <div className="space-y-1">
+                        {prop.lines.map((l) => (
+                          <div
+                            key={l.bookmaker}
+                            className="flex items-center justify-between text-xs"
+                          >
+                            <span className="text-text-secondary">
+                              {abbreviateBookmaker(l.bookmaker)}
+                            </span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-text-tertiary tabular-nums">
+                                {l.hdp}
+                              </span>
+                              <span
+                                className={cn(
+                                  "w-12 text-right font-mono tabular-nums",
+                                  prop.bestOver?.bookmaker === l.bookmaker &&
+                                    prop.bestOver?.odds === l.over
+                                    ? "text-neon-green"
+                                    : "text-text-primary",
+                                )}
+                              >
+                                {formatOdds(l.over)}
+                              </span>
+                              <span
+                                className={cn(
+                                  "w-12 text-right font-mono tabular-nums",
+                                  prop.bestUnder?.bookmaker === l.bookmaker &&
+                                    prop.bestUnder?.odds === l.under
+                                    ? "text-neon-green"
+                                    : "text-text-primary",
+                                )}
+                              >
+                                {formatOdds(l.under)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Section ────────────────────────────────────────────────────────────
+
 export function PlayerPropsSection({
   eventId,
   league,
@@ -69,8 +386,6 @@ export function PlayerPropsSection({
 
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("away");
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
-  const [expandedProp, setExpandedProp] = useState<string | null>(null);
-  const [showEdgesOnly, setShowEdgesOnly] = useState(true);
 
   const parsed = useMemo(() => {
     if (!data?.bookmakers) return null;
@@ -89,7 +404,6 @@ export function PlayerPropsSection({
     return keys;
   }, [valueBets]);
 
-  // Build a map: normalized player name → { allProps, edgeProps }
   const playerPropsMap = useMemo(() => {
     const map = new Map<string, { allProps: PlayerProp[]; edgeProps: PlayerProp[] }>();
     if (!parsed) return map;
@@ -101,7 +415,6 @@ export function PlayerPropsSection({
     return map;
   }, [parsed, evPropKeys]);
 
-  // Build full player list from roster, enriched with edge props
   const allPlayers = useMemo((): DisplayPlayer[] => {
     if (!roster) return [];
 
@@ -117,7 +430,6 @@ export function PlayerPropsSection({
           const data = playerPropsMap.get(norm) ?? playerPropsMap.get(normShort) ?? { allProps: [], edgeProps: [] };
           return { id: rp.id, name: rp.name, rosterPlayer: rp, team, allProps: data.allProps, edgeProps: data.edgeProps };
         })
-        // Players with edges first, then alphabetical
         .sort((a, b) => {
           if (a.edgeProps.length > 0 && b.edgeProps.length === 0) return -1;
           if (a.edgeProps.length === 0 && b.edgeProps.length > 0) return 1;
@@ -131,18 +443,15 @@ export function PlayerPropsSection({
     ];
   }, [roster, playerPropsMap]);
 
-  // Filter by team
   const filteredPlayers = useMemo(
     () => allPlayers.filter((p) => p.team === teamFilter),
     [allPlayers, teamFilter],
   );
 
-  // Resolve selected player
-  const selectedPlayer = useMemo(() => {
-    if (filteredPlayers.length === 0) return null;
-    const found = filteredPlayers.find((p) => p.id === selectedPlayerId);
-    return found ?? filteredPlayers[0];
-  }, [filteredPlayers, selectedPlayerId]);
+  const selectedPlayer = useMemo(
+    () => filteredPlayers.find((p) => p.id === selectedPlayerId) ?? null,
+    [filteredPlayers, selectedPlayerId],
+  );
 
   // ── Loading state ─────────────────────────────────────────────────────────
   if (isLoading || rosterLoading) {
@@ -153,19 +462,15 @@ export function PlayerPropsSection({
           <Skeleton className="h-10 w-44 rounded-lg" />
           <Skeleton className="h-10 w-44 rounded-lg" />
         </div>
-        <div className="flex gap-4">
-          <div className="w-56 space-y-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 rounded-lg" />
-            ))}
-          </div>
-          <Skeleton className="h-80 flex-1 rounded-xl" />
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-xl" />
+          ))}
         </div>
       </section>
     );
   }
 
-  // ── Error state ───────────────────────────────────────────────────────────
   if (isError) {
     return (
       <section className="space-y-3">
@@ -179,7 +484,6 @@ export function PlayerPropsSection({
     );
   }
 
-  // ── No roster state ───────────────────────────────────────────────────────
   if (!roster || allPlayers.length === 0) {
     return (
       <section className="space-y-3">
@@ -195,10 +499,8 @@ export function PlayerPropsSection({
     );
   }
 
-  // Edge count for badge
   const totalEdges = allPlayers.reduce((s, p) => s + p.edgeProps.length, 0);
 
-  // ── Main render ───────────────────────────────────────────────────────────
   return (
     <section className="space-y-4">
       {/* Header */}
@@ -211,14 +513,10 @@ export function PlayerPropsSection({
         )}
       </div>
 
-      {/* Team selector — centered, logo + name */}
+      {/* Team selector */}
       <div className="flex items-center justify-center gap-3">
         <button
-          onClick={() => {
-            setTeamFilter("away");
-            setSelectedPlayerId(null);
-            setExpandedProp(null);
-          }}
+          onClick={() => setTeamFilter("away")}
           className={cn(
             "flex items-center gap-2.5 rounded-xl px-4 py-2.5 transition-colors",
             teamFilter === "away"
@@ -240,11 +538,7 @@ export function PlayerPropsSection({
         <span className="text-xs font-bold text-text-tertiary/40">vs</span>
 
         <button
-          onClick={() => {
-            setTeamFilter("home");
-            setSelectedPlayerId(null);
-            setExpandedProp(null);
-          }}
+          onClick={() => setTeamFilter("home")}
           className={cn(
             "flex items-center gap-2.5 rounded-xl px-4 py-2.5 transition-colors",
             teamFilter === "home"
@@ -264,340 +558,55 @@ export function PlayerPropsSection({
         </button>
       </div>
 
-      {/* Two-panel layout */}
-      <div className="flex gap-5 items-start">
-        {/* Left: full roster list */}
-        <div className="w-56 shrink-0 space-y-1 p-1 sm:w-60">
-          {filteredPlayers.map((player) => {
-            const isSelected = selectedPlayer?.id === player.id;
-            const hasEdges = player.edgeProps.length > 0;
-            return (
-              <button
-                key={player.id}
-                onClick={() => {
-                  setSelectedPlayerId(player.id);
-                  setExpandedProp(null);
-                }}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
-                  isSelected
-                    ? "bg-neon-gold/10 ring-1 ring-neon-gold/25"
-                    : "hover:bg-white/[0.04]",
-                  !hasEdges && !isSelected && "opacity-40",
-                )}
-              >
-                <PlayerAvatar
-                  playerName={player.name}
-                  league={league}
-                  size={40}
-                  headshotUrl={player.rosterPlayer.headshotUrl}
-                />
-                <div className="min-w-0 flex-1">
-                  <p
-                    className={cn(
-                      "text-[15px] font-semibold leading-tight truncate",
-                      isSelected ? "text-neon-gold" : "text-text-primary",
-                    )}
-                  >
-                    {player.name}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-0.5 text-xs">
-                    {player.rosterPlayer.position && (
-                      <span className="text-text-tertiary/60">
-                        {player.rosterPlayer.position}
-                      </span>
-                    )}
-                    {hasEdges && (
-                      <span className="text-neon-gold font-medium">
-                        {player.edgeProps.length} edge{player.edgeProps.length !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Right: selected player detail */}
-        <div className="min-w-0 flex-1">
-          {selectedPlayer && (() => {
-            const displayProps = showEdgesOnly ? selectedPlayer.edgeProps : selectedPlayer.allProps;
-            const hasAnyProps = selectedPlayer.allProps.length > 0;
-
-            return (
-            <div className="overflow-hidden rounded-xl border border-border-bright/40 bg-[#0a1018]">
-              {/* Player header */}
-              <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
-                <PlayerAvatar
-                  playerName={selectedPlayer.name}
-                  league={league}
-                  size={48}
-                  headshotUrl={selectedPlayer.rosterPlayer.headshotUrl}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-base font-bold text-text-primary truncate">
-                      {selectedPlayer.name}
-                    </p>
-                    {selectedPlayer.rosterPlayer.position && (
-                      <span className="rounded bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-bold text-text-tertiary">
-                        {selectedPlayer.rosterPlayer.position}
-                      </span>
-                    )}
-                    {selectedPlayer.rosterPlayer.jersey && (
-                      <span className="text-[11px] text-text-tertiary">
-                        #{selectedPlayer.rosterPlayer.jersey}
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-0.5 text-xs text-text-tertiary">
-                    {selectedPlayer.edgeProps.length > 0
-                      ? `${selectedPlayer.edgeProps.length} edge${selectedPlayer.edgeProps.length !== 1 ? "s" : ""}`
-                      : "No edges"}
-                    {selectedPlayer.allProps.length > 0 && (
-                      <span className="text-text-tertiary/50">
-                        {" "}/{" "}{selectedPlayer.allProps.length} prop{selectedPlayer.allProps.length !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                  </p>
-                </div>
-
-                {/* Edges / All segmented toggle */}
-                {hasAnyProps && (
-                  <div className="shrink-0 flex rounded-lg bg-white/[0.04] p-0.5 ring-1 ring-white/[0.08]">
-                    <button
-                      onClick={() => setShowEdgesOnly(true)}
-                      className={cn(
-                        "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
-                        showEdgesOnly
-                          ? "bg-neon-gold/15 text-neon-gold shadow-sm"
-                          : "text-text-tertiary hover:text-text-secondary",
-                      )}
-                    >
-                      <EyeOff size={12} />
-                      Edges
-                    </button>
-                    <button
-                      onClick={() => setShowEdgesOnly(false)}
-                      className={cn(
-                        "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
-                        !showEdgesOnly
-                          ? "bg-white/[0.1] text-text-primary shadow-sm"
-                          : "text-text-tertiary hover:text-text-secondary",
-                      )}
-                    >
-                      <Eye size={12} />
-                      All
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Prop rows or empty state */}
-              {!hasAnyProps ? (
-                <div className="px-5 py-10 text-center">
-                  <p className="text-sm text-text-secondary">
-                    No props available for this player.
-                  </p>
-                </div>
-              ) : displayProps.length === 0 ? (
-                <div className="px-5 py-10 text-center">
-                  <p className="text-sm text-text-secondary">
-                    No edge opportunities for this player.
-                  </p>
-                  <button
-                    onClick={() => setShowEdgesOnly(false)}
-                    className="mt-2 text-xs font-medium text-neon-gold hover:underline"
-                  >
-                    Show all {selectedPlayer.allProps.length} props
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  {displayProps.map((prop) => {
-                    const isEdge = hasEdge(prop, evPropKeys);
-                    const isExpanded = expandedProp === prop.propType;
-                    const overBetter =
-                      prop.bestOver && prop.bestUnder
-                        ? prop.bestOver.odds > prop.bestUnder.odds
-                        : false;
-                    const underBetter =
-                      prop.bestOver && prop.bestUnder
-                        ? prop.bestUnder.odds > prop.bestOver.odds
-                        : false;
-                    const isEV = evPropKeys.has(
-                      `${prop.propType}|${prop.consensusLine}`,
-                    );
-
-                    return (
-                      <div
-                        key={prop.propType}
-                        className={cn(
-                          "border-b border-white/[0.04] last:border-b-0",
-                          !isEdge && "opacity-50",
-                        )}
-                      >
-                        <div className="px-5 py-3">
-                          {/* Prop type + line + edge flags */}
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-[13px] font-semibold text-text-primary">
-                              {prop.propType}
-                            </span>
-                            <span className="text-xs tabular-nums text-text-secondary">
-                              {prop.consensusLine}
-                            </span>
-                            {prop.hasLineDiscrepancy && (
-                              <span className="inline-flex items-center gap-0.5 rounded bg-neon-yellow/[0.1] px-1.5 py-0.5 text-[10px] font-bold text-neon-yellow ring-1 ring-neon-yellow/20">
-                                <AlertTriangle size={10} />
-                                LINE
-                              </span>
-                            )}
-                            {prop.hasOddsDiscrepancy && (
-                              <span className="rounded bg-blue-400/[0.1] px-1.5 py-0.5 text-[10px] font-bold text-blue-400 ring-1 ring-blue-400/20">
-                                VALUE
-                              </span>
-                            )}
-                            {isEV && (
-                              <span className="inline-flex items-center gap-0.5 rounded bg-neon-green/[0.1] px-1.5 py-0.5 text-[10px] font-bold text-neon-green ring-1 ring-neon-green/20">
-                                <TrendingUp size={10} />
-                                +EV
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Over / Under */}
-                          <div className="grid grid-cols-2 gap-2">
-                            <div
-                              className={cn(
-                                "flex items-center justify-between rounded-lg px-2.5 py-1.5",
-                                overBetter
-                                  ? "bg-neon-green/[0.06] ring-1 ring-neon-green/15"
-                                  : "bg-white/[0.025] ring-1 ring-white/[0.05]",
-                              )}
-                            >
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
-                                Over
-                              </span>
-                              <div className="text-right">
-                                <span
-                                  className={cn(
-                                    "text-base font-[900] tabular-nums",
-                                    overBetter ? "text-neon-green" : "text-text-primary",
-                                  )}
-                                >
-                                  {prop.bestOver ? formatOdds(prop.bestOver.odds) : "\u2014"}
-                                </span>
-                                {prop.bestOver && (
-                                  <span className="ml-1.5 text-[10px] text-text-tertiary">
-                                    {abbreviateBookmaker(prop.bestOver.bookmaker)}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div
-                              className={cn(
-                                "flex items-center justify-between rounded-lg px-2.5 py-1.5",
-                                underBetter
-                                  ? "bg-neon-green/[0.06] ring-1 ring-neon-green/15"
-                                  : "bg-white/[0.025] ring-1 ring-white/[0.05]",
-                              )}
-                            >
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
-                                Under
-                              </span>
-                              <div className="text-right">
-                                <span
-                                  className={cn(
-                                    "text-base font-[900] tabular-nums",
-                                    underBetter ? "text-neon-green" : "text-text-primary",
-                                  )}
-                                >
-                                  {prop.bestUnder ? formatOdds(prop.bestUnder.odds) : "\u2014"}
-                                </span>
-                                {prop.bestUnder && (
-                                  <span className="ml-1.5 text-[10px] text-text-tertiary">
-                                    {abbreviateBookmaker(prop.bestUnder.bookmaker)}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Expand bookmaker breakdown */}
-                          {prop.lines.length > 1 && (
-                            <button
-                              onClick={() =>
-                                setExpandedProp(isExpanded ? null : prop.propType)
-                              }
-                              className="mt-1.5 flex w-full items-center justify-center gap-1 rounded py-0.5 text-[11px] font-medium text-text-tertiary hover:bg-white/[0.03] hover:text-text-secondary transition-colors"
-                            >
-                              {isExpanded ? "Hide" : `${prop.lines.length}`} books
-                              <ChevronDown
-                                size={12}
-                                className={cn(
-                                  "transition-transform",
-                                  isExpanded && "rotate-180",
-                                )}
-                              />
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Expanded bookmaker details */}
-                        {isExpanded && prop.lines.length > 1 && (
-                          <div className="border-t border-white/[0.03] bg-white/[0.01] px-5 py-2">
-                            <div className="space-y-1">
-                              {prop.lines.map((l) => (
-                                <div
-                                  key={l.bookmaker}
-                                  className="flex items-center justify-between text-xs"
-                                >
-                                  <span className="text-text-secondary">
-                                    {abbreviateBookmaker(l.bookmaker)}
-                                  </span>
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-text-tertiary tabular-nums">
-                                      {l.hdp}
-                                    </span>
-                                    <span
-                                      className={cn(
-                                        "w-12 text-right font-mono tabular-nums",
-                                        prop.bestOver?.bookmaker === l.bookmaker &&
-                                          prop.bestOver?.odds === l.over
-                                          ? "text-neon-green"
-                                          : "text-text-primary",
-                                      )}
-                                    >
-                                      {formatOdds(l.over)}
-                                    </span>
-                                    <span
-                                      className={cn(
-                                        "w-12 text-right font-mono tabular-nums",
-                                        prop.bestUnder?.bookmaker === l.bookmaker &&
-                                          prop.bestUnder?.odds === l.under
-                                          ? "text-neon-green"
-                                          : "text-text-primary",
-                                      )}
-                                    >
-                                      {formatOdds(l.under)}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+      {/* Player card grid */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+        {filteredPlayers.map((player) => {
+          const hasEdges = player.edgeProps.length > 0;
+          return (
+            <button
+              key={player.id}
+              onClick={() => setSelectedPlayerId(player.id)}
+              className={cn(
+                "group flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-center transition-all hover:scale-[1.03]",
+                hasEdges
+                  ? "border-neon-gold/20 bg-neon-gold/[0.03] hover:border-neon-gold/40 hover:bg-neon-gold/[0.06]"
+                  : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04] opacity-50",
               )}
-            </div>
-            );
-          })()}
-        </div>
+            >
+              <PlayerAvatar
+                playerName={player.name}
+                league={league}
+                size={48}
+                headshotUrl={player.rosterPlayer.headshotUrl}
+              />
+              <div className="min-w-0 w-full">
+                <p className="text-sm font-semibold text-text-primary leading-tight truncate">
+                  {player.name}
+                </p>
+                <p className="mt-0.5 text-[11px] text-text-tertiary">
+                  {player.rosterPlayer.position}
+                  {player.rosterPlayer.jersey && ` #${player.rosterPlayer.jersey}`}
+                </p>
+              </div>
+              {hasEdges && (
+                <span className="rounded-full bg-neon-gold/10 px-2 py-0.5 text-[10px] font-bold tabular-nums text-neon-gold ring-1 ring-neon-gold/20">
+                  {player.edgeProps.length} edge{player.edgeProps.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Props popup */}
+      {selectedPlayer && (
+        <PropsPopup
+          player={selectedPlayer}
+          league={league}
+          evPropKeys={evPropKeys}
+          onClose={() => setSelectedPlayerId(null)}
+        />
+      )}
     </section>
   );
 }
