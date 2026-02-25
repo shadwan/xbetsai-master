@@ -164,4 +164,108 @@ export async function fetchGamePrediction(
   };
 }
 
+// ── Roster types ────────────────────────────────────────────────────────────
+
+export interface RosterPlayer {
+  id: string;
+  name: string;
+  shortName: string;
+  jersey: string;
+  position: string;
+  headshotUrl: string | null;
+  starter: boolean;
+  active: boolean;
+}
+
+export interface GameRosterTeam {
+  name: string;
+  abbreviation: string;
+  players: RosterPlayer[];
+}
+
+export interface GameRoster {
+  homeTeam: GameRosterTeam;
+  awayTeam: GameRosterTeam;
+}
+
+// ── Roster fetcher ──────────────────────────────────────────────────────────
+
+/**
+ * Fetch a single team's roster from ESPN's team roster endpoint.
+ * Works for all game states (scheduled, live, completed).
+ */
+async function fetchTeamRoster(
+  sport: string,
+  league: string,
+  teamId: string,
+): Promise<GameRosterTeam | null> {
+  const url = `${ESPN_BASE}/${sport}/${league}/teams/${teamId}/roster`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(8_000) });
+  if (!res.ok) return null;
+
+  const json = await res.json();
+
+  const team = json?.team as
+    | { displayName?: string; abbreviation?: string }
+    | undefined;
+
+  const athletes = json?.athletes as
+    | Array<{
+        id?: string;
+        displayName?: string;
+        shortName?: string;
+        jersey?: string;
+        headshot?: { href?: string };
+        position?: { abbreviation?: string };
+        status?: { type?: string };
+      }>
+    | undefined;
+
+  if (!athletes) return null;
+
+  const players: RosterPlayer[] = athletes
+    .filter((a) => a.id)
+    .map((a) => ({
+      id: a.id!,
+      name: a.displayName ?? "Unknown",
+      shortName: a.shortName ?? a.displayName ?? "Unknown",
+      jersey: a.jersey ?? "",
+      position: a.position?.abbreviation ?? "",
+      headshotUrl: a.headshot?.href ?? null,
+      starter: false, // roster endpoint doesn't have starter info
+      active: a.status?.type === "active",
+    }));
+
+  return {
+    name: team?.displayName ?? "Unknown",
+    abbreviation: team?.abbreviation ?? "",
+    players,
+  };
+}
+
+/**
+ * Fetch full game roster for both teams using ESPN's team roster endpoint.
+ * Works for all game states — no dependency on boxscore data.
+ */
+export async function fetchGameRoster(
+  leagueSlug: string,
+  homeTeamId: string,
+  awayTeamId: string,
+): Promise<GameRoster | null> {
+  const espn = ESPN_LEAGUES[leagueSlug];
+  if (!espn) return null;
+
+  const [homeRoster, awayRoster] = await Promise.all([
+    fetchTeamRoster(espn.sport, espn.league, homeTeamId),
+    fetchTeamRoster(espn.sport, espn.league, awayTeamId),
+  ]);
+
+  if (!homeRoster || !awayRoster) return null;
+
+  return {
+    homeTeam: homeRoster,
+    awayTeam: awayRoster,
+  };
+}
+
 export { ESPN_LEAGUES };

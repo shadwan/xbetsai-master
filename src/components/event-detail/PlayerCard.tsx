@@ -14,6 +14,12 @@ interface PlayerCardProps {
   props: PlayerProp[];
   edgeOnly?: boolean;
   evPropKeys?: Set<string>; // "propType|line" keys that match +EV bets
+  // Optional roster metadata
+  position?: string;
+  jersey?: string;
+  headshotUrl?: string | null;
+  starter?: boolean;
+  rosterOnly?: boolean; // true = player has no props (from roster only)
 }
 
 function formatOdds(decimal: number): string {
@@ -36,8 +42,42 @@ export function PlayerCard({
   props,
   edgeOnly = false,
   evPropKeys,
+  position,
+  jersey,
+  headshotUrl,
+  starter,
+  rosterOnly = false,
 }: PlayerCardProps) {
   const [expandedProp, setExpandedProp] = useState<string | null>(null);
+
+  // Roster-only players (no props) get a minimal card
+  if (rosterOnly) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-border-bright/40 bg-[#0a1018] opacity-50">
+        <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+          <PlayerAvatar playerName={playerName} league={league} size={44} headshotUrl={headshotUrl} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-[15px] font-bold text-text-primary leading-tight truncate">
+                {playerName}
+              </p>
+              {position && (
+                <span className="rounded bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-bold text-text-tertiary">
+                  {position}
+                </span>
+              )}
+              {jersey && (
+                <span className="text-[11px] text-text-tertiary">#{jersey}</span>
+              )}
+            </div>
+            <p className="mt-0.5 text-xs text-text-tertiary">
+              No props available
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const displayProps = edgeOnly
     ? props.filter((p) => hasEdge(p, evPropKeys))
@@ -49,11 +89,26 @@ export function PlayerCard({
     <div className="overflow-hidden rounded-xl border border-border-bright/40 bg-[#0a1018]">
       {/* Player header */}
       <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
-        <PlayerAvatar playerName={playerName} league={league} size={44} />
+        <PlayerAvatar playerName={playerName} league={league} size={44} headshotUrl={headshotUrl} />
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-bold text-text-primary leading-tight truncate">
-            {playerName}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-[15px] font-bold text-text-primary leading-tight truncate">
+              {playerName}
+            </p>
+            {position && (
+              <span className="rounded bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-bold text-text-tertiary">
+                {position}
+              </span>
+            )}
+            {jersey && (
+              <span className="text-[11px] text-text-tertiary">#{jersey}</span>
+            )}
+            {starter && (
+              <span className="rounded bg-neon-cyan/10 px-1.5 py-0.5 text-[10px] font-bold text-neon-cyan ring-1 ring-neon-cyan/20">
+                START
+              </span>
+            )}
+          </div>
           <p className="mt-0.5 text-xs text-text-tertiary">
             {displayProps.length} prop{displayProps.length !== 1 ? "s" : ""}
             {edgeOnly && props.length > displayProps.length && (

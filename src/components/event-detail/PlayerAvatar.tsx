@@ -8,6 +8,7 @@ interface PlayerAvatarProps {
   playerName: string;
   league: string;
   size?: number;
+  headshotUrl?: string | null;
 }
 
 // Derive a deterministic hue from the player name for the initials fallback
@@ -26,8 +27,12 @@ function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function PlayerAvatar({ playerName, league, size = 48 }: PlayerAvatarProps) {
-  const { headshotUrl, isLoading } = usePlayerHeadshot(playerName, league);
+export function PlayerAvatar({ playerName, league, size = 48, headshotUrl: directUrl }: PlayerAvatarProps) {
+  // When a direct URL is provided, skip the per-player ESPN search API call
+  const skipHook = !!directUrl;
+  const hookResult = usePlayerHeadshot(skipHook ? "" : playerName, skipHook ? "" : league);
+  const headshotUrl = directUrl ?? hookResult.headshotUrl;
+  const isLoading = skipHook ? false : hookResult.isLoading;
   const [imgError, setImgError] = useState(false);
 
   const hue = nameToHue(playerName);

@@ -21,6 +21,7 @@ import {
   decimalToAmerican,
   impliedProbability,
   getLeagueSlug,
+  getTeamNames,
 } from "@/src/lib/utils/odds";
 import { computeMarketConsensus, getBookmakerBreakdown } from "@/src/lib/utils/predictions";
 import { PredictionBar } from "@/src/components/PredictionBar";
@@ -392,6 +393,8 @@ export default function EventDetailPage() {
               eventId={eventId}
               league={getLeagueSlug(eventOdds.event)}
               valueBets={eventValueBets}
+              homeTeam={getTeamNames(eventOdds.event).home}
+              awayTeam={getTeamNames(eventOdds.event).away}
             />
           </>
         )}
