@@ -60,25 +60,35 @@ export async function GET(request: NextRequest) {
 
     const json = await res.json();
 
-    // Navigate the search response to find athlete results
-    const results = json?.results as Array<Record<string, unknown>> | undefined;
-    if (!results || results.length === 0) {
-      cache.set(cacheKey, { headshotUrl: null, expiresAt: Date.now() + CACHE_TTL });
-      return NextResponse.json({ headshotUrl: null });
-    }
-
-    // Find the "athletes" section in results
+    // ESPN search API returns items at root OR nested under results[].contents
     let athletes: Array<Record<string, unknown>> = [];
-    for (const section of results) {
-      if (section.type === "athlete" || section.displayName === "Athletes") {
-        athletes = (section.contents ?? section.items ?? []) as Array<Record<string, unknown>>;
-        break;
+
+    // Shape 1: { items: [...] } — flat list of players
+    if (Array.isArray(json?.items) && json.items.length > 0) {
+      athletes = json.items;
+    }
+    // Shape 2: { results: [{ type: "athlete", contents: [...] }] }
+    else if (Array.isArray(json?.results)) {
+      for (const section of json.results) {
+        if (
+          section.type === "athlete" ||
+          section.displayName === "Athletes"
+        ) {
+          athletes = (section.contents ?? section.items ?? []) as Array<
+            Record<string, unknown>
+          >;
+          break;
+        }
       }
+      if (athletes.length === 0) athletes = json.results;
     }
 
-    // Fallback: check if results themselves are athletes
     if (athletes.length === 0) {
-      athletes = results;
+      cache.set(cacheKey, {
+        headshotUrl: null,
+        expiresAt: Date.now() + CACHE_TTL,
+      });
+      return NextResponse.json({ headshotUrl: null });
     }
 
     // Find the best matching athlete
@@ -93,19 +103,23 @@ export async function GET(request: NextRequest) {
         ""
       ).toLowerCase();
 
-      if (athleteName === nameLower || athleteName.includes(nameLower) || nameLower.includes(athleteName)) {
-        // Try to extract headshot from various response shapes
-        const uid = athlete.uid as string | undefined;
-        const id = athlete.id as string | undefined;
-        const link = athlete.link as string | undefined;
+      if (
+        athleteName === nameLower ||
+        athleteName.includes(nameLower) ||
+        nameLower.includes(athleteName)
+      ) {
+        // Try to get image directly
         const image = athlete.image as string | undefined;
-
         if (image) {
           headshotUrl = image;
           break;
         }
 
-        // Extract player ID from uid ("s:40~l:46~a:4432") or id
+        // Extract player ID from various fields to build headshot CDN URL
+        const uid = athlete.uid as string | undefined;
+        const id = athlete.id as string | undefined;
+        const link = athlete.link as string | undefined;
+
         let playerId = id;
         if (!playerId && uid) {
           const match = uid.match(/a:(\d+)/);
@@ -117,7 +131,8 @@ export async function GET(request: NextRequest) {
         }
 
         if (playerId) {
-          headshotUrl = `https://a.espncdn.com/i/headshots/${espn.sport}/players/full/${playerId}.png`;
+          // CDN uses league abbreviation: nba, nhl, nfl, mlb
+          headshotUrl = `https://a.espncdn.com/i/headshots/${espn.league}/players/full/${playerId}.png`;
           break;
         }
       }

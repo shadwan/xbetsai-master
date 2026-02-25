@@ -127,6 +127,27 @@ function cleanPlayerName(label: string): string {
   return label.replace(ALL_PARENS, "").trim();
 }
 
+/** Title-case a category string so "Shots on Goal" and "Shots On Goal" merge. */
+function titleCase(s: string): string {
+  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** Normalize category aliases so bookmakers with different naming merge. */
+const CATEGORY_ALIASES: Record<string, string> = {
+  "Pts+Asts": "Points & Assists",
+  "Pts+Rebs": "Points & Rebounds",
+  "Pts+Rebs+Asts": "Points, Assists & Rebounds",
+  "Rebs+Asts": "Rebounds & Assists",
+  "3 Point FG": "Threes Made",
+  "Double+Double": "Double Double",
+  "Triple+Double": "Triple Double",
+};
+
+function normalizeCategory(cat: string): string {
+  const titled = titleCase(cat);
+  return CATEGORY_ALIASES[titled] ?? titled;
+}
+
 function findConsensusLine(lines: { hdp: number }[]): number {
   const freq = new Map<number, number>();
   for (const l of lines) {
@@ -188,7 +209,8 @@ export function parsePropsEnhanced(raw: RawPropsResponse): ParsedPropsData {
       for (const entry of market.odds) {
         if (!entry.label) continue;
 
-        const category = extractCategory(market.name, entry.label);
+        const rawCat = extractCategory(market.name, entry.label);
+        const category = normalizeCategory(rawCat);
         const name = cleanPlayerName(entry.label);
         if (!name) continue;
 
@@ -342,7 +364,8 @@ export function parseProps(raw: RawPropsResponse): ParsedPropMarket[] {
 
       for (const entry of market.odds) {
         if (!entry.label) continue;
-        const statType = extractCategory(market.name, entry.label);
+        const rawCat = extractCategory(market.name, entry.label);
+        const statType = normalizeCategory(rawCat);
         const cleanName = cleanPlayerName(entry.label);
         if (!cleanName) continue;
 
