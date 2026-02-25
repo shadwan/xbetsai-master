@@ -8,7 +8,7 @@ import { getTeamParts } from "@/src/lib/utils/team-abbrevs";
 import { computeMarketConsensus } from "@/src/lib/utils/predictions";
 import { MotionIcon } from "motion-icons-react";
 import { LiveBadge } from "./LiveBadge";
-import { Crown } from "lucide-react";
+import { Crown, Users } from "lucide-react";
 import { TeamLogo } from "./TeamLogo";
 
 interface EventCardProps {
@@ -58,6 +58,11 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
   const eventArbBet = arbBets?.find((ab) => ab.eventId === eid);
   const hasEdge = !!eventValueBet;
   const hasArb = !!eventArbBet;
+  const hasProps = valueBets?.some(
+    (vb) =>
+      vb.eventId === eid &&
+      (/^Player Props/i.test(vb.market) || /\s+O\/U$/i.test(vb.market)),
+  );
 
   const { label: dateLabel, sublabel, time } = formatDateLine(getStartTime(event.event));
   const consensus = useMemo(() => computeMarketConsensus(event), [event]);
@@ -114,6 +119,15 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
             >
               <MotionIcon name="Trophy" size={16} color="var(--color-neon-yellow)" animation="none" />
               <span className="text-sm font-extrabold tracking-wide text-neon-yellow">SURE</span>
+            </span>
+          )}
+          {hasProps && (
+            <span
+              className="flex items-center gap-1 rounded-full bg-neon-cyan/10 px-2.5 py-1 ring-1 ring-neon-cyan/25"
+              title="Player Props Available"
+            >
+              <Users size={14} className="text-neon-cyan" />
+              <span className="text-sm font-extrabold tracking-wide text-neon-cyan">PROPS</span>
             </span>
           )}
           {live && <LiveBadge />}
