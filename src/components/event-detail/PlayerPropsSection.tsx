@@ -462,9 +462,9 @@ export function PlayerPropsSection({
           <Skeleton className="h-10 w-44 rounded-lg" />
           <Skeleton className="h-10 w-44 rounded-lg" />
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-44 rounded-xl" />
           ))}
         </div>
       </section>
@@ -559,7 +559,7 @@ export function PlayerPropsSection({
       </div>
 
       {/* Player card grid */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {filteredPlayers.map((player) => {
           const hasEdges = player.edgeProps.length > 0;
           return (
@@ -567,7 +567,7 @@ export function PlayerPropsSection({
               key={player.id}
               onClick={() => setSelectedPlayerId(player.id)}
               className={cn(
-                "group flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-center transition-all hover:scale-[1.03]",
+                "group flex flex-col items-center gap-3 rounded-2xl border px-4 py-5 text-center transition-all hover:scale-[1.03]",
                 hasEdges
                   ? "border-neon-gold/20 bg-neon-gold/[0.03] hover:border-neon-gold/40 hover:bg-neon-gold/[0.06]"
                   : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04] opacity-50",
@@ -576,20 +576,20 @@ export function PlayerPropsSection({
               <PlayerAvatar
                 playerName={player.name}
                 league={league}
-                size={48}
+                size={80}
                 headshotUrl={player.rosterPlayer.headshotUrl}
               />
               <div className="min-w-0 w-full">
-                <p className="text-sm font-semibold text-text-primary leading-tight truncate">
+                <p className="text-base font-bold text-text-primary leading-tight truncate">
                   {player.name}
                 </p>
-                <p className="mt-0.5 text-[11px] text-text-tertiary">
+                <p className="mt-1 text-sm text-text-tertiary">
                   {player.rosterPlayer.position}
                   {player.rosterPlayer.jersey && ` #${player.rosterPlayer.jersey}`}
                 </p>
               </div>
               {hasEdges && (
-                <span className="rounded-full bg-neon-gold/10 px-2 py-0.5 text-[10px] font-bold tabular-nums text-neon-gold ring-1 ring-neon-gold/20">
+                <span className="rounded-full bg-neon-gold/10 px-3 py-1 text-xs font-bold tabular-nums text-neon-gold ring-1 ring-neon-gold/20">
                   {player.edgeProps.length} edge{player.edgeProps.length !== 1 ? "s" : ""}
                 </span>
               )}
