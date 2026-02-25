@@ -72,8 +72,6 @@ export function MatchupInsights({ event, valueBets, arbBets }: MatchupInsightsPr
                 label="Market"
                 awayPct={awayPct}
                 homePct={homePct}
-                awayName={awayNickname}
-                homeName={homeNickname}
                 awayTeam={away}
                 homeTeam={home}
                 league={leagueSlug}
@@ -96,8 +94,6 @@ export function MatchupInsights({ event, valueBets, arbBets }: MatchupInsightsPr
                 label="ESPN BPI"
                 awayPct={Math.round(espnPred.awayWinProb)}
                 homePct={Math.round(espnPred.homeWinProb)}
-                awayName={awayNickname}
-                homeName={homeNickname}
                 awayTeam={away}
                 homeTeam={home}
                 league={leagueSlug}
@@ -215,8 +211,6 @@ interface PredictionRowProps {
   label: string;
   awayPct: number;
   homePct: number;
-  awayName: string;
-  homeName: string;
   awayTeam: string;
   homeTeam: string;
   league: string;
@@ -227,8 +221,6 @@ function PredictionRow({
   label,
   awayPct,
   homePct,
-  awayName,
-  homeName,
   awayTeam,
   homeTeam,
   league,

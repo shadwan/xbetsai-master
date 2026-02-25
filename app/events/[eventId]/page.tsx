@@ -9,7 +9,7 @@ import { EVBadge } from "@/src/components/EVBadge";
 import { ArbBadge } from "@/src/components/ArbBadge";
 import { OddsCell } from "@/src/components/OddsCell";
 import { StakeCalculator } from "@/src/components/StakeCalculator";
-import { PropsSection } from "@/src/components/PropsSection";
+import { PlayerPropsSection } from "@/src/components/event-detail/PlayerPropsSection";
 import { LineChart } from "@/src/components/LineChart";
 import { Skeleton } from "@/src/components/Skeleton";
 import { useEventOdds } from "@/src/lib/hooks/use-odds";
@@ -20,6 +20,7 @@ import {
   findBestOdds,
   decimalToAmerican,
   impliedProbability,
+  getLeagueSlug,
 } from "@/src/lib/utils/odds";
 import { computeMarketConsensus, getBookmakerBreakdown } from "@/src/lib/utils/predictions";
 import { PredictionBar } from "@/src/components/PredictionBar";
@@ -387,12 +388,11 @@ export default function EventDetailPage() {
             </section>
 
             {/* Player props */}
-            <section className="space-y-3">
-              <h2 className="text-lg font-semibold text-text-primary">
-                Player Props
-              </h2>
-              <PropsSection eventId={eventId} />
-            </section>
+            <PlayerPropsSection
+              eventId={eventId}
+              league={getLeagueSlug(eventOdds.event)}
+              valueBets={eventValueBets}
+            />
           </>
         )}
       </main>
