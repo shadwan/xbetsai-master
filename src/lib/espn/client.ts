@@ -209,19 +209,35 @@ async function fetchTeamRoster(
     | { displayName?: string; abbreviation?: string }
     | undefined;
 
-  const athletes = json?.athletes as
-    | Array<{
-        id?: string;
-        displayName?: string;
-        shortName?: string;
-        jersey?: string;
-        headshot?: { href?: string };
-        position?: { abbreviation?: string };
-        status?: { type?: string };
-      }>
-    | undefined;
+  // ESPN returns two shapes for the roster `athletes` array:
+  //   NBA:          flat array of athlete objects  [{ id, displayName, ... }]
+  //   NHL/NFL/MLB:  grouped by position           [{ position: "Centers", items: [{ id, ... }] }]
+  // Flatten both into a single athlete array.
+  type AthleteRaw = {
+    id?: string;
+    displayName?: string;
+    shortName?: string;
+    jersey?: string;
+    headshot?: { href?: string };
+    position?: { abbreviation?: string };
+    status?: { type?: string };
+  };
 
-  if (!athletes) return null;
+  const rawAthletes = json?.athletes as Array<Record<string, unknown>> | undefined;
+  if (!rawAthletes || rawAthletes.length === 0) return null;
+
+  let athletes: AthleteRaw[];
+  if ("items" in rawAthletes[0]) {
+    // Grouped shape — flatten position groups
+    athletes = rawAthletes.flatMap(
+      (group) => (group.items as AthleteRaw[] | undefined) ?? [],
+    );
+  } else {
+    // Flat shape
+    athletes = rawAthletes as unknown as AthleteRaw[];
+  }
+
+  if (athletes.length === 0) return null;
 
   const players: RosterPlayer[] = athletes
     .filter((a) => a.id)
