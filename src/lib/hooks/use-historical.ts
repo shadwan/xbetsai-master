@@ -1,17 +1,17 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { HistoricalEventOdds } from "@/src/lib/odds-api/types";
+import type { EventOddsMovement } from "@/src/lib/realtime/poller";
 
 export function useHistorical(eventId: string) {
-  return useQuery<HistoricalEventOdds>({
+  return useQuery<EventOddsMovement>({
     queryKey: ["historical", eventId],
     queryFn: async () => {
       const res = await fetch(`/api/historical/${eventId}`);
-      if (!res.ok) throw new Error(`Failed to fetch historical odds for event ${eventId}: ${res.status}`);
+      if (!res.ok) throw new Error(`Failed to fetch odds movement for event ${eventId}: ${res.status}`);
       return res.json();
     },
-    staleTime: 300_000,
+    staleTime: 600_000,
     refetchInterval: false,
     enabled: !!eventId,
   });

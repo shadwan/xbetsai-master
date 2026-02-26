@@ -5,9 +5,9 @@ import { useParams } from "next/navigation";
 import { Header } from "@/src/components/Header";
 import { EventHero } from "@/src/components/event-detail/EventHero";
 import { MatchupInsights } from "@/src/components/event-detail/MatchupInsights";
+import { OddsComparison } from "@/src/components/event-detail/OddsComparison";
 import { EVBadge } from "@/src/components/EVBadge";
 import { ArbBadge } from "@/src/components/ArbBadge";
-import { OddsCell } from "@/src/components/OddsCell";
 import { StakeCalculator } from "@/src/components/StakeCalculator";
 import { PlayerPropsSection } from "@/src/components/event-detail/PlayerPropsSection";
 import { LineChart } from "@/src/components/LineChart";
@@ -15,21 +15,16 @@ import { Skeleton } from "@/src/components/Skeleton";
 import { useEventOdds } from "@/src/lib/hooks/use-odds";
 import { useValueBets } from "@/src/lib/hooks/use-value-bets";
 import { useArbBets } from "@/src/lib/hooks/use-arb-bets";
-import { BOOKMAKERS } from "@/src/lib/odds-api/constants";
 import {
-  findBestOdds,
   decimalToAmerican,
   impliedProbability,
   getLeagueSlug,
   getTeamNames,
 } from "@/src/lib/utils/odds";
-import { computeMarketConsensus, getBookmakerBreakdown } from "@/src/lib/utils/predictions";
-import { PredictionBar } from "@/src/components/PredictionBar";
-import type { WsMarket, ConsolidatedOddsEvent, ValueBet, ArbitrageBet } from "@/src/lib/odds-api/types";
+import { getTeamAbbreviation } from "@/src/lib/utils/team-abbrevs";
+import type { ConsolidatedOddsEvent, ValueBet, ArbitrageBet } from "@/src/lib/odds-api/types";
 import { cn } from "@/lib/utils";
 import { BarChart3, TrendingUp, Users } from "lucide-react";
-
-const MARKET_NAMES = ["ML", "Spread", "Totals"] as const;
 
 const TABS = [
   { id: "odds", label: "Odds & Markets", icon: BarChart3 },
@@ -38,28 +33,6 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
-
-function outcomeKeysForMarket(market: string): { key: string; label: string }[] {
-  switch (market) {
-    case "ML":
-      return [
-        { key: "home", label: "Home" },
-        { key: "away", label: "Away" },
-      ];
-    case "Spread":
-      return [
-        { key: "home", label: "Home" },
-        { key: "away", label: "Away" },
-      ];
-    case "Totals":
-      return [
-        { key: "over", label: "Over" },
-        { key: "under", label: "Under" },
-      ];
-    default:
-      return [];
-  }
-}
 
 function EventDetailTabs({
   eventOdds,
@@ -103,170 +76,21 @@ function EventDetailTabs({
       {/* Tab content */}
       {activeTab === "odds" && (
         <div className="space-y-6">
-          {/* Market consensus predictions */}
+          {/* Unified odds comparison table */}
           {(() => {
-            const consensus = computeMarketConsensus(eventOdds);
-            if (!consensus) return null;
-            const breakdown = getBookmakerBreakdown(eventOdds);
+            const { home, away } = getTeamNames(eventOdds.event);
+            const leagueSlug = getLeagueSlug(eventOdds.event);
             return (
-              <section className="space-y-3">
-                <h2 className="text-lg font-semibold text-text-primary">
-                  Market Consensus
-                </h2>
-                <div className="rounded-lg border border-border bg-surface p-4 space-y-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold text-text-primary">{consensus.away.name}</span>
-                    <span className="text-xs text-text-tertiary">
-                      {consensus.bookmakerCount} bookmakers
-                    </span>
-                    <span className="font-semibold text-text-primary">{consensus.home.name}</span>
-                  </div>
-                  <PredictionBar consensus={consensus} className="max-w-sm mx-auto" />
-
-                  {breakdown.length > 0 && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border">
-                            <th className="py-2 pr-4 text-left text-xs font-medium text-text-tertiary">
-                              Bookmaker
-                            </th>
-                            <th className="py-2 px-2 text-center text-xs font-medium text-text-tertiary">
-                              {consensus.away.name}
-                            </th>
-                            {consensus.draw && (
-                              <th className="py-2 px-2 text-center text-xs font-medium text-text-tertiary">
-                                Draw
-                              </th>
-                            )}
-                            <th className="py-2 pl-2 text-center text-xs font-medium text-text-tertiary">
-                              {consensus.home.name}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {breakdown.map((bk) => (
-                            <tr key={bk.bookmaker} className="border-b border-border/50">
-                              <td className="py-1.5 pr-4 text-text-secondary">{bk.bookmaker}</td>
-                              <td className="py-1.5 px-2 text-center font-mono text-text-primary">
-                                {(bk.away * 100).toFixed(1)}%
-                              </td>
-                              {consensus.draw && (
-                                <td className="py-1.5 px-2 text-center font-mono text-text-primary">
-                                  {((bk.draw ?? 0) * 100).toFixed(1)}%
-                                </td>
-                              )}
-                              <td className="py-1.5 pl-2 text-center font-mono text-text-primary">
-                                {(bk.home * 100).toFixed(1)}%
-                              </td>
-                            </tr>
-                          ))}
-                          <tr className="font-semibold">
-                            <td className="py-1.5 pr-4 text-neon-cyan">Consensus</td>
-                            <td className="py-1.5 px-2 text-center font-mono text-neon-cyan">
-                              {(consensus.away.probability * 100).toFixed(1)}%
-                            </td>
-                            {consensus.draw && (
-                              <td className="py-1.5 px-2 text-center font-mono text-neon-cyan">
-                                {(consensus.draw.probability * 100).toFixed(1)}%
-                              </td>
-                            )}
-                            <td className="py-1.5 pl-2 text-center font-mono text-neon-cyan">
-                              {(consensus.home.probability * 100).toFixed(1)}%
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </section>
+              <OddsComparison
+                eventOdds={eventOdds}
+                homeTeam={home}
+                awayTeam={away}
+                homeAbbrev={getTeamAbbreviation(leagueSlug, home) ?? undefined}
+                awayAbbrev={getTeamAbbreviation(leagueSlug, away) ?? undefined}
+                league={leagueSlug}
+              />
             );
           })()}
-
-          {/* Odds comparison */}
-          <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-text-primary">Odds Comparison</h2>
-            {MARKET_NAMES.map((marketName) => {
-              const bestOdds = findBestOdds(marketName, eventOdds.bookmakers);
-              const rows = outcomeKeysForMarket(marketName);
-              const hasDrawInML =
-                marketName === "ML" &&
-                Object.values(eventOdds.bookmakers).some((bk) => {
-                  const m = bk.markets.find((mk: WsMarket) => mk.name === "ML");
-                  return m?.odds[0]?.draw != null;
-                });
-              const allRows = hasDrawInML
-                ? [...rows, { key: "draw", label: "Draw" }]
-                : rows;
-
-              return (
-                <div
-                  key={marketName}
-                  className="rounded-lg border border-border bg-surface overflow-hidden"
-                >
-                  <div className="border-b border-border px-4 py-2">
-                    <h3 className="text-sm font-semibold text-text-primary">{marketName}</h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <div className="min-w-[500px]">
-                      <div
-                        className="grid gap-1 px-4 py-2"
-                        style={{
-                          gridTemplateColumns: `120px repeat(${BOOKMAKERS.length}, 1fr)`,
-                        }}
-                      >
-                        <div />
-                        {BOOKMAKERS.map((bk) => (
-                          <div
-                            key={bk}
-                            className="text-center text-xs text-text-tertiary font-medium truncate"
-                          >
-                            {bk}
-                          </div>
-                        ))}
-                      </div>
-                      {allRows.map((row) => (
-                        <div
-                          key={row.key}
-                          className="grid gap-1 px-4 py-0.5"
-                          style={{
-                            gridTemplateColumns: `120px repeat(${BOOKMAKERS.length}, 1fr)`,
-                          }}
-                        >
-                          <div className="flex items-center text-sm text-text-secondary">
-                            {row.label}
-                          </div>
-                          {BOOKMAKERS.map((bk) => {
-                            const bkData = eventOdds.bookmakers[bk];
-                            const market = bkData?.markets.find(
-                              (m: WsMarket) => m.name === marketName,
-                            );
-                            const outcome = market?.odds[0];
-                            const oddsVal =
-                              outcome?.[row.key as keyof typeof outcome];
-                            const decimal =
-                              oddsVal != null ? parseFloat(String(oddsVal)) : null;
-                            const isBest =
-                              bestOdds[row.key]?.bookmaker === bk && decimal != null;
-
-                            return (
-                              <OddsCell
-                                key={bk}
-                                decimalOdds={isNaN(decimal as number) ? null : decimal}
-                                isBest={isBest}
-                                marketType={marketName}
-                              />
-                            );
-                          })}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </section>
 
           {/* +EV Opportunities */}
           {eventValueBets.length > 0 && (
@@ -374,7 +198,7 @@ function EventDetailTabs({
 
       {activeTab === "props" && (
         <PlayerPropsSection
-          eventId={eventId}
+          eventOdds={eventOdds}
           league={getLeagueSlug(eventOdds.event)}
           valueBets={eventValueBets}
           homeTeam={getTeamNames(eventOdds.event).home}

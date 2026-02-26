@@ -512,6 +512,131 @@ export async function fetchHistoricalOdds(eventId: string): Promise<HistoricalEv
   }
 }
 
+// ── 11. Odds Movement (on-demand) ───────────────────────────────────────
+
+export interface OddsMovementPoint {
+  home: number;
+  away: number;
+  draw?: number;
+  hdp?: string;
+  timestamp: number;
+}
+
+export interface BookmakerMovement {
+  bookmaker: string;
+  market: string;
+  opening: OddsMovementPoint | null;
+  latest: OddsMovementPoint | null;
+  movements: OddsMovementPoint[];
+}
+
+export interface EventOddsMovement {
+  eventId: string;
+  data: BookmakerMovement[];
+}
+
+export async function fetchOddsMovement(eventId: string): Promise<EventOddsMovement> {
+  const cacheKey = `movement:${eventId}`;
+  const cached = cache.get<EventOddsMovement>(cacheKey);
+  if (cached) return cached;
+
+  // Step 1: Get current odds to find available lines for Spread/Totals
+  let spreadLine: number | undefined;
+  let totalsLine: number | undefined;
+
+  try {
+    const odds = await oddsClient.getEventOdds({
+      eventId,
+      bookmakers: BOOKMAKERS[0], // just need one bookmaker to find the lines
+    });
+    const rawOdds = odds as unknown as {
+      bookmakers?: Record<string, Array<{
+        name: string;
+        odds: Array<{ hdp?: number }>;
+      }>>;
+    };
+    if (rawOdds.bookmakers) {
+      const bkMarkets = Object.values(rawOdds.bookmakers)[0];
+      if (bkMarkets) {
+        const spread = bkMarkets.find((m) => m.name === "Spread");
+        if (spread?.odds?.[0]?.hdp != null) spreadLine = spread.odds[0].hdp;
+        const totals = bkMarkets.find((m) => m.name === "Totals");
+        if (totals?.odds?.[0]?.hdp != null) totalsLine = totals.odds[0].hdp;
+      }
+    }
+  } catch {
+    // Proceed with ML-only if odds fetch fails
+  }
+
+  // Step 2: Fetch movements for all bookmaker × market combos
+  const allData: BookmakerMovement[] = [];
+  const tasks: Promise<void>[] = [];
+
+  for (const bk of BOOKMAKERS) {
+    // ML — no marketLine needed
+    tasks.push(
+      (async () => {
+        try {
+          const result = await oddsClient.getOddsMovement({ eventId, bookmaker: bk, market: "ML" });
+          const raw = result as unknown as {
+            opening?: OddsMovementPoint; latest?: OddsMovementPoint; movements?: OddsMovementPoint[];
+          };
+          allData.push({
+            bookmaker: bk, market: "ML",
+            opening: raw.opening ?? null, latest: raw.latest ?? null, movements: raw.movements ?? [],
+          });
+        } catch { /* skip */ }
+      })(),
+    );
+
+    // Spread — requires marketLine
+    if (spreadLine != null) {
+      tasks.push(
+        (async () => {
+          try {
+            const result = await oddsClient.getOddsMovement({
+              eventId, bookmaker: bk, market: "Spread", marketLine: spreadLine,
+            });
+            const raw = result as unknown as {
+              opening?: OddsMovementPoint; latest?: OddsMovementPoint; movements?: OddsMovementPoint[];
+            };
+            allData.push({
+              bookmaker: bk, market: "Spread",
+              opening: raw.opening ?? null, latest: raw.latest ?? null, movements: raw.movements ?? [],
+            });
+          } catch { /* skip */ }
+        })(),
+      );
+    }
+
+    // Totals — requires marketLine
+    if (totalsLine != null) {
+      tasks.push(
+        (async () => {
+          try {
+            const result = await oddsClient.getOddsMovement({
+              eventId, bookmaker: bk, market: "Totals", marketLine: totalsLine,
+            });
+            const raw = result as unknown as {
+              opening?: OddsMovementPoint; latest?: OddsMovementPoint; movements?: OddsMovementPoint[];
+            };
+            allData.push({
+              bookmaker: bk, market: "Totals",
+              opening: raw.opening ?? null, latest: raw.latest ?? null, movements: raw.movements ?? [],
+            });
+          } catch { /* skip */ }
+        })(),
+      );
+    }
+  }
+
+  await Promise.allSettled(tasks);
+
+  const result: EventOddsMovement = { eventId, data: allData };
+  cache.set(cacheKey, result, CACHE_TTL.MOVEMENT);
+  return result;
+}
+
 // ── Public API ───────────────────────────────────────────────────────────
 
 export async function startPollers(): Promise<void> {

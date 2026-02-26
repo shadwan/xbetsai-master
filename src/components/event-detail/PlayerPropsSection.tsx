@@ -3,11 +3,10 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, TrendingUp, ChevronDown, Eye, EyeOff, X } from "lucide-react";
-import { useProps } from "@/src/lib/hooks/use-props";
 import { useGameRoster } from "@/src/lib/hooks/use-game-roster";
-import { parsePropsEnhanced } from "@/src/lib/utils/props";
+import { parsePropsEnhanced, consolidatedToPropsInput } from "@/src/lib/utils/props";
 import type { PlayerProp } from "@/src/lib/utils/props";
-import type { ValueBet } from "@/src/lib/odds-api/types";
+import type { ValueBet, ConsolidatedOddsEvent } from "@/src/lib/odds-api/types";
 import type { RosterPlayer } from "@/src/lib/espn/client";
 import { decimalToAmerican } from "@/src/lib/utils/odds";
 import { abbreviateBookmaker } from "@/src/lib/utils/props";
@@ -16,7 +15,7 @@ import { PlayerAvatar } from "./PlayerAvatar";
 import { TeamLogo } from "@/src/components/TeamLogo";
 
 interface PlayerPropsSectionProps {
-  eventId: string;
+  eventOdds: ConsolidatedOddsEvent;
   league: string;
   valueBets?: ValueBet[];
   homeTeam?: string;
@@ -375,22 +374,23 @@ function PropsPopup({
 // ── Main Section ────────────────────────────────────────────────────────────
 
 export function PlayerPropsSection({
-  eventId,
+  eventOdds,
   league,
   valueBets = [],
   homeTeam,
   awayTeam,
 }: PlayerPropsSectionProps) {
-  const { data, isLoading, isError } = useProps(eventId);
   const { roster, isLoading: rosterLoading } = useGameRoster(league, homeTeam ?? "", awayTeam ?? "");
 
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("away");
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
 
   const parsed = useMemo(() => {
-    if (!data?.bookmakers) return null;
-    return parsePropsEnhanced(data);
-  }, [data]);
+    if (!eventOdds?.bookmakers) return null;
+    const propsInput = consolidatedToPropsInput(eventOdds);
+    if (Object.keys(propsInput.bookmakers).length === 0) return null;
+    return parsePropsEnhanced(propsInput);
+  }, [eventOdds]);
 
   const evPropKeys = useMemo(() => {
     const keys = new Set<string>();
@@ -454,7 +454,7 @@ export function PlayerPropsSection({
   );
 
   // ── Loading state ─────────────────────────────────────────────────────────
-  if (isLoading || rosterLoading) {
+  if (rosterLoading) {
     return (
       <section className="space-y-4">
         <Skeleton className="h-6 w-40 rounded" />
@@ -466,19 +466,6 @@ export function PlayerPropsSection({
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-44 rounded-xl" />
           ))}
-        </div>
-      </section>
-    );
-  }
-
-  if (isError) {
-    return (
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-text-primary">Player Edges</h2>
-        <div className="rounded-xl border border-border-bright/40 bg-[#0a1018] px-6 py-10 text-center">
-          <p className="text-sm text-text-secondary">
-            Unable to load player props. Try refreshing the page.
-          </p>
         </div>
       </section>
     );

@@ -70,7 +70,7 @@ interface RawMarket {
   odds: RawOddsEntry[];
 }
 
-interface RawPropsResponse {
+export interface RawPropsResponse {
   bookmakers: Record<string, RawMarket[]>;
 }
 
@@ -417,4 +417,29 @@ export function parseProps(raw: RawPropsResponse): ParsedPropMarket[] {
 
   result.sort((a, b) => a.statType.localeCompare(b.statType));
   return result;
+}
+
+// ── Converter: ConsolidatedOddsEvent → RawPropsResponse ─────────────────
+
+import type { ConsolidatedOddsEvent } from "@/src/lib/odds-api/types";
+
+/**
+ * Convert consolidated event data (from cache/polling) into the shape
+ * that `parsePropsEnhanced` expects. The raw API response stored in the
+ * cache already contains `label` on player prop odds entries — the
+ * WsOddsOutcome type just didn't declare it until now.
+ */
+export function consolidatedToPropsInput(
+  eventOdds: ConsolidatedOddsEvent,
+): RawPropsResponse {
+  const bookmakers: Record<string, RawMarket[]> = {};
+
+  for (const [bk, data] of Object.entries(eventOdds.bookmakers)) {
+    bookmakers[bk] = data.markets.map((m) => ({
+      name: m.name,
+      odds: m.odds as unknown as RawOddsEntry[],
+    }));
+  }
+
+  return { bookmakers };
 }

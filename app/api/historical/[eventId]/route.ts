@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchHistoricalOdds } from "@/src/lib/realtime/poller";
+import { fetchOddsMovement } from "@/src/lib/realtime/poller";
 
 export const dynamic = "force-dynamic";
 
@@ -9,13 +9,11 @@ export async function GET(
 ): Promise<NextResponse> {
   const { eventId } = await params;
 
-  const data = await fetchHistoricalOdds(eventId);
-  if (!data) {
-    return NextResponse.json(
-      { error: "Historical odds not found" },
-      { status: 404 },
-    );
+  try {
+    const data = await fetchOddsMovement(eventId);
+    return NextResponse.json(data);
+  } catch (err) {
+    console.error(`[api/historical] Failed for ${eventId}:`, (err as Error).message);
+    return NextResponse.json({ eventId, data: [] });
   }
-
-  return NextResponse.json(data);
 }

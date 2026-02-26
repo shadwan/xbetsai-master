@@ -89,6 +89,7 @@ export const CACHE_TTL = {
   ARB_BETS: 30 * 1_000,              // 30 s  — must outlast 15 s poll interval
   PROPS: 30 * 1_000,                 // 30 s  — on-demand, user-triggered
   HISTORICAL: 5 * 60 * 1_000,        // 5 min — doesn't change once recorded
+  MOVEMENT: 10 * 60 * 1_000,         // 10 min — odds movement refresh
   PARTICIPANTS: 24 * 60 * 60 * 1_000, // 24 h — daily refresh sufficient
 } as const;
 

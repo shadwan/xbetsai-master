@@ -38,6 +38,7 @@ export type {
 // ── WebSocket types (match WS guide field names) ─────────────────────────
 
 export interface WsOddsOutcome {
+  readonly label?: string;
   readonly home?: string;
   readonly draw?: string;
   readonly away?: string;
