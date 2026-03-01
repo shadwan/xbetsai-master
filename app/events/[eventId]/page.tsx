@@ -7,8 +7,7 @@ import { EventHero } from "@/src/components/event-detail/EventHero";
 import { MatchupInsights } from "@/src/components/event-detail/MatchupInsights";
 import { OddsComparison } from "@/src/components/event-detail/OddsComparison";
 import { EVBadge } from "@/src/components/EVBadge";
-import { ArbBadge } from "@/src/components/ArbBadge";
-import { StakeCalculator } from "@/src/components/StakeCalculator";
+import { SurebetCard } from "@/src/components/event-detail/SurebetCard";
 import { PlayerPropsSection } from "@/src/components/event-detail/PlayerPropsSection";
 import { LineChart } from "@/src/components/LineChart";
 import { TeamLogo } from "@/src/components/TeamLogo";
@@ -40,11 +39,13 @@ function EventDetailTabs({
   eventId,
   eventValueBets,
   eventArbBets,
+  arbDataUpdatedAt,
 }: {
   eventOdds: ConsolidatedOddsEvent;
   eventId: string;
   eventValueBets: ValueBet[];
   eventArbBets: ArbitrageBet[];
+  arbDataUpdatedAt: number;
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("odds");
   const [selectedSide, setSelectedSide] = useState<"home" | "away">("home");
@@ -56,6 +57,7 @@ function EventDetailTabs({
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
+          const hasArbs = tab.id === "opportunities" && eventArbBets.length > 0;
           return (
             <button
               key={tab.id}
@@ -63,11 +65,15 @@ function EventDetailTabs({
               className={cn(
                 "flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 text-base font-semibold transition-all duration-200",
                 isActive
-                  ? "bg-white/10 text-text-primary shadow-sm ring-1 ring-white/10"
-                  : "text-text-secondary hover:text-text-primary hover:bg-white/[0.04]",
+                  ? hasArbs
+                    ? "bg-neon-yellow/10 text-neon-yellow shadow-sm ring-1 ring-neon-yellow/25"
+                    : "bg-white/10 text-text-primary shadow-sm ring-1 ring-white/10"
+                  : hasArbs
+                    ? "text-neon-yellow/70 hover:text-neon-yellow hover:bg-neon-yellow/[0.06]"
+                    : "text-text-secondary hover:text-text-primary hover:bg-white/[0.04]",
               )}
             >
-              <Icon size={18} className={isActive ? "text-neon-cyan" : ""} />
+              <Icon size={18} className={isActive ? (hasArbs ? "text-neon-yellow" : "text-neon-cyan") : (hasArbs ? "text-neon-yellow/70" : "")} />
               <span className="hidden sm:inline">{tab.label}</span>
               <span className="sm:hidden">{tab.label.split(" ")[0]}</span>
             </button>
@@ -159,6 +165,16 @@ function EventDetailTabs({
 
       {activeTab === "opportunities" && (
         <div className="space-y-6">
+          {/* Surebet Opportunities — shown first when available */}
+          {eventArbBets.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-xl font-semibold text-text-primary">Surebet Opportunities</h2>
+              {eventArbBets.map((arb, i) => (
+                <SurebetCard key={i} arb={arb} eventOdds={eventOdds} dataUpdatedAt={arbDataUpdatedAt} />
+              ))}
+            </section>
+          )}
+
           {/* +EV Opportunities */}
           {eventValueBets.length > 0 && (
             <section className="space-y-3">
@@ -222,38 +238,6 @@ function EventDetailTabs({
             </section>
           )}
 
-          {/* Surebet Opportunities */}
-          {eventArbBets.length > 0 && (
-            <section className="space-y-3">
-              <h2 className="text-xl font-semibold text-text-primary">Surebet Opportunities</h2>
-              {eventArbBets.map((arb, i) => (
-                <div
-                  key={i}
-                  className="rounded-lg border border-neon-yellow/20 bg-neon-yellow/5 p-4 space-y-3"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-semibold text-text-primary">{arb.market}</span>
-                    <ArbBadge profitPercentage={arb.profitPercentage} />
-                  </div>
-                  <div className="flex flex-wrap gap-3 text-base">
-                    {arb.legs?.map((leg, j) => {
-                      const am = decimalToAmerican(leg.odds);
-                      return (
-                        <span key={j} className="text-text-secondary">
-                          {leg.bookmaker}:{" "}
-                          <span className="font-mono text-text-primary">
-                            {leg.outcome} {am > 0 ? `+${am}` : am}
-                          </span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                  <StakeCalculator arbBet={arb} />
-                </div>
-              ))}
-            </section>
-          )}
-
           {/* Empty state */}
           {eventValueBets.length === 0 && eventArbBets.length === 0 && (
             <div className="rounded-xl border border-border-bright/40 bg-[#0a1018] px-6 py-16 text-center">
@@ -286,7 +270,7 @@ export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const { data: eventOdds, isLoading } = useEventOdds(eventId);
   const { data: valueBets } = useValueBets();
-  const { data: arbBets } = useArbBets();
+  const { data: arbBets, dataUpdatedAt: arbDataUpdatedAt } = useArbBets();
 
   const eventValueBets = useMemo(
     () => (valueBets ?? []).filter((vb) => vb.eventId === eventId),
@@ -334,6 +318,7 @@ export default function EventDetailPage() {
               eventId={eventId}
               eventValueBets={eventValueBets}
               eventArbBets={eventArbBets}
+              arbDataUpdatedAt={arbDataUpdatedAt}
             />
           </>
         )}
