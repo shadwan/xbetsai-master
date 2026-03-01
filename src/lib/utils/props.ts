@@ -188,7 +188,12 @@ const BK_ABBR: Record<string, string> = {
 };
 
 export function abbreviateBookmaker(name: string): string {
-  return BK_ABBR[name] ?? name;
+  // Exact match first
+  if (BK_ABBR[name]) return BK_ABBR[name];
+  // Strip parenthetical suffixes like "(no latency)" and retry
+  const stripped = name.replace(/\s*\([^)]*\)\s*$/, "").trim();
+  if (BK_ABBR[stripped]) return BK_ABBR[stripped];
+  return name;
 }
 
 // ── Main parser ─────────────────────────────────────────────────────────────

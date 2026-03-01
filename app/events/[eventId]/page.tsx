@@ -50,7 +50,7 @@ function EventDetailTabs({
   return (
     <div className="space-y-5">
       {/* Tab bar */}
-      <div className="flex items-center gap-1 rounded-xl bg-white/[0.03] p-1 border border-white/[0.06]">
+      <div className="flex items-center gap-1 rounded-xl bg-white/[0.04] p-1 border border-white/10">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -59,13 +59,13 @@ function EventDetailTabs({
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200",
+                "flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 text-base font-semibold transition-all duration-200",
                 isActive
-                  ? "bg-white/[0.08] text-text-primary shadow-sm ring-1 ring-white/[0.08]"
-                  : "text-text-tertiary hover:text-text-secondary hover:bg-white/[0.03]",
+                  ? "bg-white/10 text-text-primary shadow-sm ring-1 ring-white/10"
+                  : "text-text-secondary hover:text-text-primary hover:bg-white/[0.04]",
               )}
             >
-              <Icon size={16} className={isActive ? "text-neon-cyan" : ""} />
+              <Icon size={18} className={isActive ? "text-neon-cyan" : ""} />
               <span className="hidden sm:inline">{tab.label}</span>
               <span className="sm:hidden">{tab.label.split(" ")[0]}</span>
             </button>
@@ -95,7 +95,7 @@ function EventDetailTabs({
           {/* +EV Opportunities */}
           {eventValueBets.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-lg font-semibold text-text-primary">+EV Opportunities</h2>
+              <h2 className="text-xl font-semibold text-text-primary">+EV Opportunities</h2>
               <div className="space-y-3">
                 {eventValueBets.map((vb, i) => {
                   const american = decimalToAmerican(vb.odds);
@@ -112,7 +112,7 @@ function EventDetailTabs({
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-text-primary">
+                          <span className="text-base font-semibold text-text-primary">
                             {vb.market} — {vb.outcome}
                           </span>
                           <EVBadge valuePercentage={vb.valuePercentage} />
@@ -122,27 +122,27 @@ function EventDetailTabs({
                             href={bkUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-neon-cyan hover:underline"
+                            className="text-base text-neon-cyan hover:underline"
                           >
                             {vb.bookmaker} →
                           </a>
                         )}
                       </div>
-                      <div className="flex gap-6 text-sm">
+                      <div className="flex gap-6 text-base">
                         <div>
-                          <span className="text-text-tertiary">Book odds: </span>
+                          <span className="text-text-secondary">Book odds: </span>
                           <span className="font-mono text-text-primary">
                             {american > 0 ? `+${american}` : american}
                           </span>
                         </div>
                         <div>
-                          <span className="text-text-tertiary">Fair odds: </span>
+                          <span className="text-text-secondary">Fair odds: </span>
                           <span className="font-mono text-text-primary">
                             {fairAmerican > 0 ? `+${fairAmerican}` : fairAmerican}
                           </span>
                         </div>
                         <div>
-                          <span className="text-text-tertiary">¼ Kelly: </span>
+                          <span className="text-text-secondary">¼ Kelly: </span>
                           <span className="font-mono text-neon-green">
                             {kellyQuarter.toFixed(1)}%
                           </span>
@@ -158,17 +158,17 @@ function EventDetailTabs({
           {/* Surebet Opportunities */}
           {eventArbBets.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-lg font-semibold text-text-primary">Surebet Opportunities</h2>
+              <h2 className="text-xl font-semibold text-text-primary">Surebet Opportunities</h2>
               {eventArbBets.map((arb, i) => (
                 <div
                   key={i}
                   className="rounded-lg border border-neon-yellow/20 bg-neon-yellow/5 p-4 space-y-3"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-text-primary">{arb.market}</span>
+                    <span className="text-base font-semibold text-text-primary">{arb.market}</span>
                     <ArbBadge profitPercentage={arb.profitPercentage} />
                   </div>
-                  <div className="flex flex-wrap gap-3 text-sm">
+                  <div className="flex flex-wrap gap-3 text-base">
                     {arb.legs?.map((leg, j) => {
                       const am = decimalToAmerican(leg.odds);
                       return (
@@ -191,7 +191,7 @@ function EventDetailTabs({
 
       {activeTab === "lines" && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-text-primary">Line Movement</h2>
+          <h2 className="text-xl font-semibold text-text-primary">Line Movement</h2>
           <LineChart eventId={eventId} />
         </section>
       )}

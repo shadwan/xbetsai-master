@@ -165,7 +165,7 @@ export function SummaryCard({ event, valueBets, arbBets, isLoading }: SummaryCar
   return (
     <div className="group relative overflow-hidden rounded-xl border border-border-bright/40 bg-[#0a1018]">
       <div className="px-5 pt-4 pb-1">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.15em] text-text-secondary">
+        <h3 className="text-base font-bold uppercase tracking-[0.15em] text-text-primary">
           Top Signal
         </h3>
       </div>
@@ -182,7 +182,7 @@ export function SummaryCard({ event, valueBets, arbBets, isLoading }: SummaryCar
         </div>
 
         {/* Body */}
-        <p className="mt-3 text-[15px] leading-[1.65] text-text-secondary">
+        <p className="mt-3 text-base leading-[1.65] text-text-secondary">
           {summary.body}
         </p>
       </div>

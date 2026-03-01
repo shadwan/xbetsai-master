@@ -60,7 +60,7 @@ export function MatchupInsights({ event, valueBets, arbBets }: MatchupInsightsPr
       {hasPredictions && (
         <div className="group relative overflow-hidden rounded-xl border border-border-bright/40 bg-[#0a1018]">
           <div className="px-5 pt-4 pb-1">
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.15em] text-text-secondary">
+            <h3 className="text-base font-bold uppercase tracking-[0.15em] text-text-primary">
               Win Probability
             </h3>
           </div>
@@ -83,7 +83,7 @@ export function MatchupInsights({ event, valueBets, arbBets }: MatchupInsightsPr
             {espnPred.isLoading && (
               <div className="flex items-center justify-between gap-3 py-2">
                 <Skeleton className="h-5 w-14 rounded" />
-                <span className="shrink-0 rounded-full bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-text-tertiary ring-1 ring-white/[0.06]">
+                <span className="shrink-0 rounded-full bg-white/[0.06] px-3 py-1 text-base font-bold uppercase tracking-wider text-text-secondary ring-1 ring-white/10">
                   ESPN BPI
                 </span>
                 <Skeleton className="h-5 w-14 rounded" />
@@ -107,12 +107,12 @@ export function MatchupInsights({ event, valueBets, arbBets }: MatchupInsightsPr
       {hasStandings && (
         <div className="group relative overflow-hidden rounded-xl border border-border-bright/40 bg-[#0a1018]">
           <div className="px-5 pt-4 pb-1">
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.15em] text-text-secondary">
+            <h3 className="text-base font-bold uppercase tracking-[0.15em] text-text-primary">
               Team Standings
             </h3>
           </div>
 
-          <div className="divide-y divide-white/[0.04] px-5 pb-4">
+          <div className="divide-y divide-white/[0.08] px-5 pb-4">
             {/* Away team row */}
             <div className="flex items-center gap-3.5 py-3.5">
               <div className="relative shrink-0">
@@ -140,12 +140,12 @@ export function MatchupInsights({ event, valueBets, arbBets }: MatchupInsightsPr
                 ) : (
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
                     {awayInfo.record && (
-                      <span className="text-sm tabular-nums text-text-secondary">
+                      <span className="text-base tabular-nums text-text-primary">
                         {awayInfo.record}
                       </span>
                     )}
                     {awayInfo.standing && (
-                      <span className="text-xs text-text-tertiary">
+                      <span className="text-base text-text-secondary">
                         {awayInfo.standing}
                       </span>
                     )}
@@ -181,12 +181,12 @@ export function MatchupInsights({ event, valueBets, arbBets }: MatchupInsightsPr
                 ) : (
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
                     {homeInfo.record && (
-                      <span className="text-sm tabular-nums text-text-secondary">
+                      <span className="text-base tabular-nums text-text-primary">
                         {homeInfo.record}
                       </span>
                     )}
                     {homeInfo.standing && (
-                      <span className="text-xs text-text-tertiary">
+                      <span className="text-base text-text-secondary">
                         {homeInfo.standing}
                       </span>
                     )}
@@ -233,11 +233,11 @@ function PredictionRow({
     <div className="space-y-2">
       {/* Source label */}
       <div className="flex items-center gap-2">
-        <span className="rounded-full bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-text-tertiary ring-1 ring-white/[0.06]">
+        <span className="rounded-full bg-white/[0.06] px-3 py-1 text-base font-bold uppercase tracking-wider text-text-secondary ring-1 ring-white/10">
           {label}
         </span>
         {bookmakerCount != null && (
-          <span className="text-[10px] text-text-tertiary/50">
+          <span className="text-base text-text-secondary">
             {bookmakerCount} books
           </span>
         )}
@@ -251,7 +251,7 @@ function PredictionRow({
           <span
             className={cn(
               "w-12 text-right text-lg font-[900] tabular-nums",
-              awayFav ? "text-neon-gold" : "text-text-tertiary/70",
+              awayFav ? "text-neon-gold" : "text-text-secondary",
             )}
           >
             {awayPct}%
@@ -259,7 +259,7 @@ function PredictionRow({
         </div>
 
         {/* Split bar */}
-        <div className="relative flex h-2 flex-1 overflow-hidden rounded-full bg-white/[0.04]">
+        <div className="relative flex h-2.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
           <div
             className="h-full rounded-l-full transition-all duration-500"
             style={{
@@ -281,7 +281,7 @@ function PredictionRow({
           <span
             className={cn(
               "w-12 text-left text-lg font-[900] tabular-nums",
-              homeFav ? "text-neon-gold" : "text-text-tertiary/70",
+              homeFav ? "text-neon-gold" : "text-text-secondary",
             )}
           >
             {homePct}%

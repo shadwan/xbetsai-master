@@ -123,7 +123,7 @@ export function EventHero({ event }: EventHeroProps) {
             href="/"
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5",
-              "text-sm font-medium text-text-secondary",
+              "text-base font-medium text-text-secondary",
               "transition-colors hover:bg-white/5 hover:text-text-primary",
             )}
           >
@@ -131,9 +131,9 @@ export function EventHero({ event }: EventHeroProps) {
             <span className="hidden sm:inline">Back</span>
           </Link>
 
-          <div className="flex items-center gap-2 rounded-full bg-white/[0.04] px-3 py-1.5 ring-1 ring-white/[0.06]">
-            <LeagueLogo league={leagueSlug} size={18} />
-            <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">
+          <div className="flex items-center gap-2 rounded-full bg-white/[0.06] px-3.5 py-1.5 ring-1 ring-white/10">
+            <LeagueLogo league={leagueSlug} size={20} />
+            <span className="text-base font-bold uppercase tracking-wider text-text-primary">
               {leagueDisplay}
             </span>
           </div>
@@ -156,7 +156,7 @@ export function EventHero({ event }: EventHeroProps) {
               />
             </div>
             <div className="text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider text-text-tertiary sm:text-sm">
+              <p className="text-base font-semibold uppercase tracking-wider text-text-secondary">
                 {awayLocation}
               </p>
               <p className="text-lg font-extrabold leading-tight tracking-tight text-text-primary sm:text-2xl">
@@ -171,14 +171,14 @@ export function EventHero({ event }: EventHeroProps) {
               <LiveBadge className="scale-110" />
             ) : (
               <>
-                <span className="text-3xl font-black tracking-widest text-neon-gold/40 sm:text-4xl">
+                <span className="text-3xl font-black tracking-widest text-neon-gold/60 sm:text-4xl">
                   VS
                 </span>
                 <div className="flex flex-col items-center gap-0">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary sm:text-xs">
+                  <span className="text-base font-semibold uppercase tracking-wider text-text-secondary">
                     {date}
                   </span>
-                  <span className="text-sm font-bold tabular-nums text-text-secondary sm:text-base">
+                  <span className="text-base font-bold tabular-nums text-text-primary">
                     {time}
                   </span>
                 </div>
@@ -201,7 +201,7 @@ export function EventHero({ event }: EventHeroProps) {
               />
             </div>
             <div className="text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider text-text-tertiary sm:text-sm">
+              <p className="text-base font-semibold uppercase tracking-wider text-text-secondary">
                 {homeLocation}
               </p>
               <p className="text-lg font-extrabold leading-tight tracking-tight text-text-primary sm:text-2xl">

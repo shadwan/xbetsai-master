@@ -52,9 +52,9 @@ export function StakeCalculator({ arbBet }: StakeCalculatorProps) {
   return (
     <div className="rounded-lg border border-border bg-surface p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-text-primary">Stake Calculator</h3>
+        <h3 className="text-base font-semibold text-text-primary">Stake Calculator</h3>
         <div className="flex items-center gap-2">
-          <label className="text-xs text-text-secondary" htmlFor="total-stake">
+          <label className="text-base text-text-secondary" htmlFor="total-stake">
             Total Stake $
           </label>
           <input
@@ -63,15 +63,15 @@ export function StakeCalculator({ arbBet }: StakeCalculatorProps) {
             min={1}
             value={totalStake}
             onChange={(e) => setTotalStake(Math.max(1, Number(e.target.value)))}
-            className="w-24 rounded border border-border bg-elevated px-2 py-1 text-right font-mono text-sm text-text-primary focus:border-neon-cyan focus:outline-none focus:ring-1 focus:ring-neon-cyan/40"
+            className="w-28 rounded border border-border bg-elevated px-2.5 py-1.5 text-right font-mono text-base text-text-primary focus:border-neon-cyan focus:outline-none focus:ring-1 focus:ring-neon-cyan/40"
           />
         </div>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-base">
           <thead>
-            <tr className="border-b border-border text-xs text-text-tertiary">
+            <tr className="border-b border-border text-base text-text-secondary">
               <th className="px-3 py-2 text-left font-medium">Outcome</th>
               <th className="px-3 py-2 text-left font-medium">Bookmaker</th>
               <th className="px-3 py-2 text-right font-medium">Odds</th>
@@ -100,7 +100,7 @@ export function StakeCalculator({ arbBet }: StakeCalculatorProps) {
       </div>
 
       <div className="flex items-center justify-between rounded-lg bg-elevated px-4 py-3">
-        <span className="text-sm text-text-secondary">Guaranteed Profit</span>
+        <span className="text-base text-text-secondary">Guaranteed Profit</span>
         <span className="font-mono text-lg font-bold text-neon-green">
           +${profit.toFixed(2)} ({roi.toFixed(1)}%)
         </span>

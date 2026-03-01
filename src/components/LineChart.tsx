@@ -137,7 +137,7 @@ export function LineChart({ eventId }: LineChartProps) {
   if (isError || !data?.data || data.data.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-surface px-6 py-12 text-center">
-        <p className="text-text-secondary text-sm">
+        <p className="text-text-secondary text-base">
           No line movement data available yet.
         </p>
       </div>
@@ -147,7 +147,7 @@ export function LineChart({ eventId }: LineChartProps) {
   if (chartData.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-surface px-6 py-12 text-center">
-        <p className="text-text-secondary text-sm">
+        <p className="text-text-secondary text-base">
           No movement data for {selectedMarket} ({selectedSide}).
         </p>
       </div>
@@ -158,23 +158,23 @@ export function LineChart({ eventId }: LineChartProps) {
     <div className="rounded-lg border border-border bg-surface p-4 space-y-4">
       {/* Market + side selectors */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-lg bg-white/[0.04] p-0.5 ring-1 ring-white/[0.08]">
+        <div className="inline-flex rounded-lg bg-white/[0.06] p-0.5 ring-1 ring-white/10">
           {MARKET_OPTIONS.filter((m) => availableMarkets.has(m)).map((m) => (
             <button
               key={m}
               onClick={() => setSelectedMarket(m)}
               className={cn(
-                "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                "rounded-md px-3.5 py-2 text-base font-semibold transition-colors",
                 selectedMarket === m
                   ? "bg-white/[0.1] text-text-primary shadow-sm"
-                  : "text-text-tertiary hover:text-text-secondary",
+                  : "text-text-secondary hover:text-text-primary",
               )}
             >
               {m}
             </button>
           ))}
         </div>
-        <div className="inline-flex rounded-lg bg-white/[0.04] p-0.5 ring-1 ring-white/[0.08]">
+        <div className="inline-flex rounded-lg bg-white/[0.06] p-0.5 ring-1 ring-white/10">
           {(["home", "away"] as const).map((side) => (
             <button
               key={side}
@@ -183,7 +183,7 @@ export function LineChart({ eventId }: LineChartProps) {
                 "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors capitalize",
                 selectedSide === side
                   ? "bg-white/[0.1] text-text-primary shadow-sm"
-                  : "text-text-tertiary hover:text-text-secondary",
+                  : "text-text-secondary hover:text-text-primary",
               )}
             >
               {side}
@@ -198,14 +198,14 @@ export function LineChart({ eventId }: LineChartProps) {
           <CartesianGrid strokeDasharray="3 3" stroke="#1c2a3a" />
           <XAxis
             dataKey="timeLabel"
-            tick={{ fill: "#8899aa", fontSize: 11 }}
+            tick={{ fill: "#a0b0c0", fontSize: 13 }}
             stroke="#1c2a3a"
             angle={-20}
             textAnchor="end"
             height={60}
           />
           <YAxis
-            tick={{ fill: "#8899aa", fontSize: 11 }}
+            tick={{ fill: "#a0b0c0", fontSize: 13 }}
             stroke="#1c2a3a"
             domain={["auto", "auto"]}
             tickFormatter={(v: number) => decimalToAmerican(v)}
@@ -216,7 +216,7 @@ export function LineChart({ eventId }: LineChartProps) {
               border: "1px solid #1c2a3a",
               borderRadius: 8,
               color: "#e8edf2",
-              fontSize: 12,
+              fontSize: 14,
             }}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={((value: any, name: any) => [
@@ -225,7 +225,7 @@ export function LineChart({ eventId }: LineChartProps) {
             ]) as never}
             labelFormatter={(label) => String(label)}
           />
-          <Legend wrapperStyle={{ color: "#8899aa", fontSize: 12 }} />
+          <Legend wrapperStyle={{ color: "#a0b0c0", fontSize: 14 }} />
           {bookmakers.map((bk, i) => (
             <Line
               key={bk}

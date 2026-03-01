@@ -97,13 +97,13 @@ function PropsPopup({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 z-10 rounded-lg p-1.5 text-text-tertiary hover:bg-white/[0.06] hover:text-text-primary transition-colors"
+          className="absolute right-3 top-3 z-10 rounded-lg p-1.5 text-text-secondary hover:bg-white/10 hover:text-text-primary transition-colors"
         >
           <X size={18} />
         </button>
 
         {/* Player header */}
-        <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
+        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
           <PlayerAvatar
             playerName={player.name}
             league={league}
@@ -116,22 +116,22 @@ function PropsPopup({
                 {player.name}
               </p>
               {player.rosterPlayer.position && (
-                <span className="rounded bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-bold text-text-tertiary">
+                <span className="rounded bg-white/10 px-2 py-0.5 text-base font-bold text-text-secondary">
                   {player.rosterPlayer.position}
                 </span>
               )}
               {player.rosterPlayer.jersey && (
-                <span className="text-xs text-text-tertiary">
+                <span className="text-base text-text-secondary">
                   #{player.rosterPlayer.jersey}
                 </span>
               )}
             </div>
-            <p className="mt-0.5 text-xs text-text-tertiary">
+            <p className="mt-0.5 text-base text-text-secondary">
               {player.edgeProps.length > 0
                 ? `${player.edgeProps.length} edge${player.edgeProps.length !== 1 ? "s" : ""}`
                 : "No edges"}
               {player.allProps.length > 0 && (
-                <span className="text-text-tertiary/50">
+                <span className="text-text-tertiary">
                   {" "}/{" "}{player.allProps.length} prop{player.allProps.length !== 1 ? "s" : ""}
                 </span>
               )}
@@ -141,30 +141,30 @@ function PropsPopup({
 
         {/* Edges / All segmented toggle */}
         {hasAnyProps && (
-          <div className="flex justify-center px-5 py-3 border-b border-white/[0.04]">
-            <div className="inline-flex rounded-lg bg-white/[0.04] p-0.5 ring-1 ring-white/[0.08]">
+          <div className="flex justify-center px-5 py-3 border-b border-white/[0.08]">
+            <div className="inline-flex rounded-lg bg-white/[0.06] p-0.5 ring-1 ring-white/10">
               <button
                 onClick={() => setShowEdgesOnly(true)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold transition-colors",
+                  "flex items-center gap-1.5 rounded-md px-4 py-2 text-base font-semibold transition-colors",
                   showEdgesOnly
                     ? "bg-neon-gold/15 text-neon-gold shadow-sm"
-                    : "text-text-tertiary hover:text-text-secondary",
+                    : "text-text-secondary hover:text-text-primary",
                 )}
               >
-                <EyeOff size={13} />
+                <EyeOff size={16} />
                 Edges only
               </button>
               <button
                 onClick={() => setShowEdgesOnly(false)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-semibold transition-colors",
+                  "flex items-center gap-1.5 rounded-md px-4 py-2 text-base font-semibold transition-colors",
                   !showEdgesOnly
                     ? "bg-white/[0.1] text-text-primary shadow-sm"
-                    : "text-text-tertiary hover:text-text-secondary",
+                    : "text-text-secondary hover:text-text-primary",
                 )}
               >
-                <Eye size={13} />
+                <Eye size={16} />
                 All props
               </button>
             </div>
@@ -174,18 +174,18 @@ function PropsPopup({
         {/* Prop rows or empty state */}
         {!hasAnyProps ? (
           <div className="px-5 py-12 text-center">
-            <p className="text-sm text-text-secondary">
+            <p className="text-base text-text-secondary">
               No props available for this player.
             </p>
           </div>
         ) : displayProps.length === 0 ? (
           <div className="px-5 py-12 text-center">
-            <p className="text-sm text-text-secondary">
+            <p className="text-base text-text-secondary">
               No edge opportunities for this player.
             </p>
             <button
               onClick={() => setShowEdgesOnly(false)}
-              className="mt-2 text-xs font-medium text-neon-gold hover:underline"
+              className="mt-2 text-base font-medium text-neon-gold hover:underline"
             >
               Show all {player.allProps.length} props
             </button>
@@ -211,32 +211,32 @@ function PropsPopup({
                 <div
                   key={prop.propType}
                   className={cn(
-                    "border-b border-white/[0.04] last:border-b-0",
+                    "border-b border-white/[0.08] last:border-b-0",
                     !isEdgeProp && "opacity-50",
                   )}
                 >
                   <div className="px-5 py-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[13px] font-semibold text-text-primary">
+                      <span className="text-base font-semibold text-text-primary">
                         {prop.propType}
                       </span>
-                      <span className="text-xs tabular-nums text-text-secondary">
+                      <span className="text-base tabular-nums text-text-secondary">
                         {prop.consensusLine}
                       </span>
                       {prop.hasLineDiscrepancy && (
-                        <span className="inline-flex items-center gap-0.5 rounded bg-neon-yellow/[0.1] px-1.5 py-0.5 text-[10px] font-bold text-neon-yellow ring-1 ring-neon-yellow/20">
-                          <AlertTriangle size={10} />
+                        <span className="inline-flex items-center gap-1 rounded bg-neon-yellow/[0.1] px-2 py-0.5 text-base font-bold text-neon-yellow ring-1 ring-neon-yellow/20">
+                          <AlertTriangle size={14} />
                           LINE
                         </span>
                       )}
                       {prop.hasOddsDiscrepancy && (
-                        <span className="rounded bg-blue-400/[0.1] px-1.5 py-0.5 text-[10px] font-bold text-blue-400 ring-1 ring-blue-400/20">
+                        <span className="rounded bg-blue-400/[0.1] px-2 py-0.5 text-base font-bold text-blue-400 ring-1 ring-blue-400/20">
                           VALUE
                         </span>
                       )}
                       {isEV && (
-                        <span className="inline-flex items-center gap-0.5 rounded bg-neon-green/[0.1] px-1.5 py-0.5 text-[10px] font-bold text-neon-green ring-1 ring-neon-green/20">
-                          <TrendingUp size={10} />
+                        <span className="inline-flex items-center gap-1 rounded bg-neon-green/[0.1] px-2 py-0.5 text-base font-bold text-neon-green ring-1 ring-neon-green/20">
+                          <TrendingUp size={14} />
                           +EV
                         </span>
                       )}
@@ -248,10 +248,10 @@ function PropsPopup({
                           "flex items-center justify-between rounded-lg px-2.5 py-1.5",
                           overBetter
                             ? "bg-neon-green/[0.06] ring-1 ring-neon-green/15"
-                            : "bg-white/[0.025] ring-1 ring-white/[0.05]",
+                            : "bg-white/[0.025] ring-1 ring-white/10",
                         )}
                       >
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+                        <span className="text-base font-bold uppercase tracking-wider text-text-secondary">
                           Over
                         </span>
                         <div className="text-right">
@@ -264,7 +264,7 @@ function PropsPopup({
                             {prop.bestOver ? formatOdds(prop.bestOver.odds) : "\u2014"}
                           </span>
                           {prop.bestOver && (
-                            <span className="ml-1.5 text-[10px] text-text-tertiary">
+                            <span className="ml-1.5 text-base text-text-secondary">
                               {abbreviateBookmaker(prop.bestOver.bookmaker)}
                             </span>
                           )}
@@ -275,10 +275,10 @@ function PropsPopup({
                           "flex items-center justify-between rounded-lg px-2.5 py-1.5",
                           underBetter
                             ? "bg-neon-green/[0.06] ring-1 ring-neon-green/15"
-                            : "bg-white/[0.025] ring-1 ring-white/[0.05]",
+                            : "bg-white/[0.025] ring-1 ring-white/10",
                         )}
                       >
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+                        <span className="text-base font-bold uppercase tracking-wider text-text-secondary">
                           Under
                         </span>
                         <div className="text-right">
@@ -291,7 +291,7 @@ function PropsPopup({
                             {prop.bestUnder ? formatOdds(prop.bestUnder.odds) : "\u2014"}
                           </span>
                           {prop.bestUnder && (
-                            <span className="ml-1.5 text-[10px] text-text-tertiary">
+                            <span className="ml-1.5 text-base text-text-secondary">
                               {abbreviateBookmaker(prop.bestUnder.bookmaker)}
                             </span>
                           )}
@@ -304,7 +304,7 @@ function PropsPopup({
                         onClick={() =>
                           setExpandedProp(isExpanded ? null : prop.propType)
                         }
-                        className="mt-1.5 flex w-full items-center justify-center gap-1 rounded py-0.5 text-[11px] font-medium text-text-tertiary hover:bg-white/[0.03] hover:text-text-secondary transition-colors"
+                        className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded py-1 text-base font-medium text-text-secondary hover:bg-white/[0.06] hover:text-text-primary transition-colors"
                       >
                         {isExpanded ? "Hide" : `${prop.lines.length}`} books
                         <ChevronDown
@@ -319,18 +319,18 @@ function PropsPopup({
                   </div>
 
                   {isExpanded && prop.lines.length > 1 && (
-                    <div className="border-t border-white/[0.03] bg-white/[0.01] px-5 py-2">
-                      <div className="space-y-1">
+                    <div className="border-t border-white/[0.06] bg-white/[0.02] px-5 py-2">
+                      <div className="space-y-1.5">
                         {prop.lines.map((l) => (
                           <div
                             key={l.bookmaker}
-                            className="flex items-center justify-between text-xs"
+                            className="flex items-center justify-between text-base"
                           >
-                            <span className="text-text-secondary">
+                            <span className="text-text-primary">
                               {abbreviateBookmaker(l.bookmaker)}
                             </span>
                             <div className="flex items-center gap-3">
-                              <span className="text-text-tertiary tabular-nums">
+                              <span className="text-text-secondary tabular-nums">
                                 {l.hdp}
                               </span>
                               <span
@@ -474,7 +474,7 @@ export function PlayerPropsSection({
   if (!roster || allPlayers.length === 0) {
     return (
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-text-primary">Player Edges</h2>
+        <h2 className="text-xl font-semibold text-text-primary">Player Edges</h2>
         <div className="rounded-xl border border-border-bright/40 bg-[#0a1018] px-6 py-10 text-center">
           <p className="text-sm text-text-secondary">
             {!parsed || parsed.totalCount === 0
@@ -492,9 +492,9 @@ export function PlayerPropsSection({
     <section className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <h2 className="text-lg font-semibold text-text-primary">Player Edges</h2>
+        <h2 className="text-xl font-semibold text-text-primary">Player Edges</h2>
         {totalEdges > 0 && (
-          <span className="rounded-full bg-neon-gold/10 px-2.5 py-0.5 text-[11px] font-semibold tabular-nums text-neon-gold ring-1 ring-neon-gold/20">
+          <span className="rounded-full bg-neon-gold/10 px-3 py-1 text-base font-semibold tabular-nums text-neon-gold ring-1 ring-neon-gold/20">
             {totalEdges}
           </span>
         )}
@@ -514,7 +514,7 @@ export function PlayerPropsSection({
           <TeamLogo league={league} teamName={awayTeam ?? "Away"} size={28} />
           <span
             className={cn(
-              "text-sm font-semibold",
+              "text-base font-semibold",
               teamFilter === "away" ? "text-neon-cyan" : "text-text-secondary",
             )}
           >
@@ -522,7 +522,7 @@ export function PlayerPropsSection({
           </span>
         </button>
 
-        <span className="text-xs font-bold text-text-tertiary/40">vs</span>
+        <span className="text-base font-bold text-text-tertiary">vs</span>
 
         <button
           onClick={() => setTeamFilter("home")}
@@ -536,7 +536,7 @@ export function PlayerPropsSection({
           <TeamLogo league={league} teamName={homeTeam ?? "Home"} size={28} />
           <span
             className={cn(
-              "text-sm font-semibold",
+              "text-base font-semibold",
               teamFilter === "home" ? "text-neon-cyan" : "text-text-secondary",
             )}
           >
@@ -570,13 +570,13 @@ export function PlayerPropsSection({
                 <p className="text-base font-bold text-text-primary leading-tight truncate">
                   {player.name}
                 </p>
-                <p className="mt-1 text-sm text-text-tertiary">
+                <p className="mt-1 text-base text-text-secondary">
                   {player.rosterPlayer.position}
                   {player.rosterPlayer.jersey && ` #${player.rosterPlayer.jersey}`}
                 </p>
               </div>
               {hasEdges && (
-                <span className="rounded-full bg-neon-gold/10 px-3 py-1 text-xs font-bold tabular-nums text-neon-gold ring-1 ring-neon-gold/20">
+                <span className="rounded-full bg-neon-gold/10 px-3 py-1 text-base font-bold tabular-nums text-neon-gold ring-1 ring-neon-gold/20">
                   {player.edgeProps.length} edge{player.edgeProps.length !== 1 ? "s" : ""}
                 </span>
               )}
