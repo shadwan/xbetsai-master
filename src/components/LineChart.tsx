@@ -18,6 +18,10 @@ import type { BookmakerMovement } from "@/src/lib/realtime/poller";
 
 interface LineChartProps {
   eventId: string;
+  homeTeam?: string;
+  awayTeam?: string;
+  league?: string;
+  selectedSide: "home" | "away";
 }
 
 const MARKET_OPTIONS = ["ML", "Spread", "Totals"] as const;
@@ -52,10 +56,9 @@ function decimalToAmerican(dec: number): string {
   return `${am}`;
 }
 
-export function LineChart({ eventId }: LineChartProps) {
+export function LineChart({ eventId, homeTeam, awayTeam, league, selectedSide }: LineChartProps) {
   const { data, isLoading, isError } = useHistorical(eventId);
   const [selectedMarket, setSelectedMarket] = useState<Market>("ML");
-  const [selectedSide, setSelectedSide] = useState<"home" | "away">("home");
 
   const marketData = useMemo(() => {
     if (!data?.data) return [];
@@ -156,40 +159,22 @@ export function LineChart({ eventId }: LineChartProps) {
 
   return (
     <div className="rounded-lg border border-border bg-surface p-4 space-y-4">
-      {/* Market + side selectors */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-lg bg-white/[0.06] p-0.5 ring-1 ring-white/10">
-          {MARKET_OPTIONS.filter((m) => availableMarkets.has(m)).map((m) => (
-            <button
-              key={m}
-              onClick={() => setSelectedMarket(m)}
-              className={cn(
-                "rounded-md px-3.5 py-2 text-base font-semibold transition-colors",
-                selectedMarket === m
-                  ? "bg-white/[0.1] text-text-primary shadow-sm"
-                  : "text-text-secondary hover:text-text-primary",
-              )}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
-        <div className="inline-flex rounded-lg bg-white/[0.06] p-0.5 ring-1 ring-white/10">
-          {(["home", "away"] as const).map((side) => (
-            <button
-              key={side}
-              onClick={() => setSelectedSide(side)}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors capitalize",
-                selectedSide === side
-                  ? "bg-white/[0.1] text-text-primary shadow-sm"
-                  : "text-text-secondary hover:text-text-primary",
-              )}
-            >
-              {side}
-            </button>
-          ))}
-        </div>
+      {/* Market selector */}
+      <div className="inline-flex rounded-lg bg-white/[0.06] p-0.5 ring-1 ring-white/10">
+        {MARKET_OPTIONS.filter((m) => availableMarkets.has(m)).map((m) => (
+          <button
+            key={m}
+            onClick={() => setSelectedMarket(m)}
+            className={cn(
+              "rounded-md px-3.5 py-2 text-base font-semibold transition-colors",
+              selectedMarket === m
+                ? "bg-white/[0.1] text-text-primary shadow-sm"
+                : "text-text-secondary hover:text-text-primary",
+            )}
+          >
+            {m}
+          </button>
+        ))}
       </div>
 
       {/* Chart */}

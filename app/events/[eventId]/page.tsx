@@ -11,6 +11,7 @@ import { ArbBadge } from "@/src/components/ArbBadge";
 import { StakeCalculator } from "@/src/components/StakeCalculator";
 import { PlayerPropsSection } from "@/src/components/event-detail/PlayerPropsSection";
 import { LineChart } from "@/src/components/LineChart";
+import { TeamLogo } from "@/src/components/TeamLogo";
 import { Skeleton } from "@/src/components/Skeleton";
 import { useEventOdds } from "@/src/lib/hooks/use-odds";
 import { useValueBets } from "@/src/lib/hooks/use-value-bets";
@@ -24,11 +25,11 @@ import {
 import { getTeamAbbreviation } from "@/src/lib/utils/team-abbrevs";
 import type { ConsolidatedOddsEvent, ValueBet, ArbitrageBet } from "@/src/lib/odds-api/types";
 import { cn } from "@/lib/utils";
-import { BarChart3, TrendingUp, Users } from "lucide-react";
+import { BarChart3, Users, Zap } from "lucide-react";
 
 const TABS = [
   { id: "odds", label: "Odds & Markets", icon: BarChart3 },
-  { id: "lines", label: "Line Movement", icon: TrendingUp },
+  { id: "opportunities", label: "Opportunities", icon: Zap },
   { id: "props", label: "Player Props", icon: Users },
 ] as const;
 
@@ -46,6 +47,7 @@ function EventDetailTabs({
   eventArbBets: ArbitrageBet[];
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("odds");
+  const [selectedSide, setSelectedSide] = useState<"home" | "away">("home");
 
   return (
     <div className="space-y-5">
@@ -81,17 +83,82 @@ function EventDetailTabs({
             const { home, away } = getTeamNames(eventOdds.event);
             const leagueSlug = getLeagueSlug(eventOdds.event);
             return (
-              <OddsComparison
-                eventOdds={eventOdds}
-                homeTeam={home}
-                awayTeam={away}
-                homeAbbrev={getTeamAbbreviation(leagueSlug, home) ?? undefined}
-                awayAbbrev={getTeamAbbreviation(leagueSlug, away) ?? undefined}
-                league={leagueSlug}
-              />
+              <>
+                <OddsComparison
+                  eventOdds={eventOdds}
+                  homeTeam={home}
+                  awayTeam={away}
+                  homeAbbrev={getTeamAbbreviation(leagueSlug, home) ?? undefined}
+                  awayAbbrev={getTeamAbbreviation(leagueSlug, away) ?? undefined}
+                  league={leagueSlug}
+                />
+
+                {/* Line Movement */}
+                <section className="space-y-3">
+                  <h2 className="text-xl font-semibold text-text-primary">Line Movement</h2>
+                  <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setSelectedSide("away")}
+                        className={cn(
+                          "flex items-center gap-2 rounded-xl px-3.5 py-2 transition-colors",
+                          selectedSide === "away"
+                            ? "bg-neon-cyan/10 ring-1 ring-neon-cyan/30"
+                            : "bg-white/[0.03] ring-1 ring-white/[0.06] hover:bg-white/[0.06]",
+                        )}
+                      >
+                        {leagueSlug && away && (
+                          <TeamLogo league={leagueSlug} teamName={away} size={22} />
+                        )}
+                        <span
+                          className={cn(
+                            "text-base font-semibold",
+                            selectedSide === "away" ? "text-neon-cyan" : "text-text-secondary",
+                          )}
+                        >
+                          {away}
+                        </span>
+                      </button>
+
+                      <span className="text-base font-bold text-text-tertiary">vs</span>
+
+                      <button
+                        onClick={() => setSelectedSide("home")}
+                        className={cn(
+                          "flex items-center gap-2 rounded-xl px-3.5 py-2 transition-colors",
+                          selectedSide === "home"
+                            ? "bg-neon-cyan/10 ring-1 ring-neon-cyan/30"
+                            : "bg-white/[0.03] ring-1 ring-white/[0.06] hover:bg-white/[0.06]",
+                        )}
+                      >
+                        {leagueSlug && home && (
+                          <TeamLogo league={leagueSlug} teamName={home} size={22} />
+                        )}
+                        <span
+                          className={cn(
+                            "text-base font-semibold",
+                            selectedSide === "home" ? "text-neon-cyan" : "text-text-secondary",
+                          )}
+                        >
+                          {home}
+                        </span>
+                      </button>
+                  </div>
+                  <LineChart
+                    eventId={eventId}
+                    homeTeam={home}
+                    awayTeam={away}
+                    league={leagueSlug}
+                    selectedSide={selectedSide}
+                  />
+                </section>
+              </>
             );
           })()}
+        </div>
+      )}
 
+      {activeTab === "opportunities" && (
+        <div className="space-y-6">
           {/* +EV Opportunities */}
           {eventValueBets.length > 0 && (
             <section className="space-y-3">
@@ -186,14 +253,20 @@ function EventDetailTabs({
               ))}
             </section>
           )}
-        </div>
-      )}
 
-      {activeTab === "lines" && (
-        <section className="space-y-3">
-          <h2 className="text-xl font-semibold text-text-primary">Line Movement</h2>
-          <LineChart eventId={eventId} />
-        </section>
+          {/* Empty state */}
+          {eventValueBets.length === 0 && eventArbBets.length === 0 && (
+            <div className="rounded-xl border border-border-bright/40 bg-[#0a1018] px-6 py-16 text-center">
+              <Zap size={32} className="mx-auto mb-3 text-text-tertiary" />
+              <p className="text-base text-text-secondary">
+                No +EV or surebet opportunities found for this event right now.
+              </p>
+              <p className="mt-1 text-base text-text-tertiary">
+                Opportunities are detected automatically — check back closer to game time.
+              </p>
+            </div>
+          )}
+        </div>
       )}
 
       {activeTab === "props" && (

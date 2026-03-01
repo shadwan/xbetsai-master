@@ -682,9 +682,9 @@ function OddsCell({
       ref={elRef}
       onAnimationEnd={handleAnimationEnd}
       className={cn(
-        "flex flex-col items-center justify-center rounded-lg px-1.5 py-2 min-h-[52px] transition-colors text-center",
+        "flex flex-col items-center justify-center px-1.5 py-2 min-h-[52px] transition-colors text-center",
         isBest
-          ? "bg-neon-green/[0.12] ring-1 ring-neon-green/25"
+          ? "border-b-2 border-neon-green/40"
           : "hover:bg-white/[0.04]",
         bookmakerUrl && "cursor-pointer",
       )}
@@ -755,7 +755,7 @@ function BestCell({
   const bk = abbreviateBookmaker(row.best.bookmaker);
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg bg-white/[0.06] px-2 py-2 min-h-[52px]">
+    <div className="flex flex-col items-center justify-center px-2 py-2 min-h-[52px]">
       <span className="font-mono text-base font-bold tabular-nums text-neon-cyan">
         {display}
       </span>
@@ -1029,15 +1029,27 @@ export function OddsComparison({
               <div className="text-center text-base font-bold uppercase tracking-widest text-neon-cyan">
                 Best
               </div>
-              {bookmakerNames.map((bk) => (
-                <div
-                  key={bk}
-                  className="text-center text-base font-bold uppercase tracking-wider text-text-secondary truncate"
-                  title={bk}
-                >
-                  {abbreviateBookmaker(bk)}
-                </div>
-              ))}
+              {bookmakerNames.map((bk) => {
+                const abbr = abbreviateBookmaker(bk);
+                // Strip parenthetical suffixes for display (e.g. "Bet365 (no latency)" → "Bet365")
+                const fullName = bk.replace(/\s*\([^)]*\)\s*$/, "").trim();
+                return (
+                  <div
+                    key={bk}
+                    className="flex flex-col items-center justify-center gap-0.5"
+                    title={bk}
+                  >
+                    <span className="text-base font-bold uppercase tracking-wider text-text-secondary">
+                      {abbr}
+                    </span>
+                    {abbr !== fullName && (
+                      <span className="text-base text-text-tertiary truncate max-w-full">
+                        {fullName}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Market sections */}
