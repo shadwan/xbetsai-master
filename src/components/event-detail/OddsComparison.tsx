@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, ChevronDown, Percent } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, ChevronDown, Percent } from "lucide-react";
 import { TeamLogo } from "@/src/components/TeamLogo";
 import { abbreviateBookmaker } from "@/src/lib/utils/props";
 import {
@@ -489,69 +489,153 @@ function buildMarketGroups(
   return groups;
 }
 
-// ── "Where to Bet" Summary ───────────────────────────────────────────────────
+// ── Best Prices Cards ────────────────────────────────────────────────────────
 
-function WhereToBet({
+function BestPriceRow({
+  label,
+  rowKey,
+  team,
+  best,
+  league,
+  homeTeam,
+  awayTeam,
+}: {
+  label: string;
+  rowKey: string;
+  team?: "home" | "away";
+  best: { bookmaker: string; odds: number } | null;
+  league: string;
+  homeTeam: string;
+  awayTeam: string;
+}) {
+  if (!best) return null;
+
+  const am = formatAmerican(best.odds);
+  const prob = formatProb(best.odds);
+  const fullName = best.bookmaker.replace(/\s*\([^)]*\)\s*$/, "").trim();
+
+  // Determine icon: team logo for ML/Spread, arrow for Over/Under
+  const isOver = rowKey === "over";
+  const isUnder = rowKey === "under";
+
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <div className="flex items-center gap-2.5 min-w-0">
+        {team && (
+          <TeamLogo
+            league={league}
+            teamName={team === "home" ? homeTeam : awayTeam}
+            size={20}
+          />
+        )}
+        {isOver && (
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-neon-green/15">
+            <ArrowUp size={14} className="text-neon-green" />
+          </div>
+        )}
+        {isUnder && (
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-neon-cyan/15">
+            <ArrowDown size={14} className="text-neon-cyan" />
+          </div>
+        )}
+        <span className="text-base font-semibold text-text-primary truncate">
+          {label}
+        </span>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        <span className="font-mono text-lg font-bold tabular-nums text-neon-green">
+          {am}
+        </span>
+        <div className="flex flex-col items-end">
+          <span className="text-base text-text-primary font-medium">{fullName}</span>
+          {prob && (
+            <span className="text-base font-mono tabular-nums text-text-secondary">
+              {prob}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BestPricesCards({
   groups,
   homeAbbrev,
   awayAbbrev,
+  league,
+  homeTeam,
+  awayTeam,
 }: {
   groups: MarketGroup[];
   homeAbbrev: string;
   awayAbbrev: string;
+  league: string;
+  homeTeam: string;
+  awayTeam: string;
 }) {
-  const items: string[] = [];
+  const hasAnyBest = groups.some((g) => g.mainRows.some((r) => r.best));
+  if (!hasAnyBest) return null;
 
-  for (const g of groups) {
-    for (const row of g.mainRows) {
-      if (!row.best) continue;
-      const am = formatAmerican(row.best.odds);
-      const bk = abbreviateBookmaker(row.best.bookmaker);
-      const side =
-        row.team === "home"
-          ? homeAbbrev
-          : row.team === "away"
-            ? awayAbbrev
-            : row.label;
-      items.push(`${bk} ${am} ${side}`);
-      break; // Only the first (best) row per market for summary
-    }
-  }
-
-  if (items.length === 0) return null;
+  const marketMeta: Record<string, { title: string; accent: string }> = {
+    ML: { title: "Moneyline", accent: "neon-cyan" },
+    Spread: { title: "Spread", accent: "neon-gold" },
+    Totals: { title: "Total", accent: "neon-green" },
+  };
 
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-base text-text-secondary">
-      <span className="font-semibold text-text-primary uppercase tracking-wider">
-        Best prices
-      </span>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       {groups.map((g) => {
-        // Find the row with the highest best odds (biggest underdog / most value)
-        let bestRow: RowData | null = null;
-        for (const row of g.mainRows) {
-          if (row.best && (!bestRow?.best || row.best.odds > bestRow.best.odds)) {
-            bestRow = row;
-          }
-        }
-        if (!bestRow?.best) return null;
-
-        const am = formatAmerican(bestRow.best.odds);
-        const bk = abbreviateBookmaker(bestRow.best.bookmaker);
-        const side =
-          bestRow.team === "home"
-            ? homeAbbrev
-            : bestRow.team === "away"
-              ? awayAbbrev
-              : bestRow.label;
+        const meta = marketMeta[g.marketName] ?? { title: g.heading, accent: "neon-cyan" };
+        const hasData = g.mainRows.some((r) => r.best);
+        if (!hasData) return null;
 
         return (
-          <span key={g.marketName} className="inline-flex items-center gap-1.5">
-            <span className="font-medium text-text-primary">{g.heading.split(" ")[0]}:</span>
-            <span className="text-neon-green font-mono font-semibold">{am}</span>
-            <span className="text-text-secondary">
-              {side} @ {bk}
-            </span>
-          </span>
+          <div
+            key={g.marketName}
+            className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-1"
+          >
+            {/* Card header */}
+            <div className="flex items-center justify-between mb-2">
+              <span className={cn(
+                "text-base font-bold uppercase tracking-widest",
+                meta.accent === "neon-cyan" && "text-neon-cyan",
+                meta.accent === "neon-gold" && "text-neon-gold",
+                meta.accent === "neon-green" && "text-neon-green",
+              )}>
+                {meta.title}
+              </span>
+              {g.subheading && (
+                <span className="text-base text-text-tertiary">
+                  {g.subheading}
+                </span>
+              )}
+            </div>
+
+            {/* Rows */}
+            <div className="divide-y divide-white/[0.06]">
+              {g.mainRows.map((row) => {
+                const sideLabel =
+                  row.team === "home"
+                    ? homeAbbrev
+                    : row.team === "away"
+                      ? awayAbbrev
+                      : row.label;
+                return (
+                  <BestPriceRow
+                    key={row.key + row.label}
+                    label={sideLabel}
+                    rowKey={row.key}
+                    team={row.team}
+                    best={row.best}
+                    league={league}
+                    homeTeam={homeTeam}
+                    awayTeam={awayTeam}
+                  />
+                );
+              })}
+            </div>
+          </div>
         );
       })}
     </div>
@@ -1006,11 +1090,14 @@ export function OddsComparison({
         </button>
       </div>
 
-      {/* Where to bet summary */}
-      <WhereToBet
+      {/* Best prices cards */}
+      <BestPricesCards
         groups={groups}
         homeAbbrev={homeAbbrev}
         awayAbbrev={awayAbbrev}
+        league={league}
+        homeTeam={homeTeam}
+        awayTeam={awayTeam}
       />
 
       {/* Unified table */}
