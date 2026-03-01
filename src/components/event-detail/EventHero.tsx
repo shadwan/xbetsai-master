@@ -120,7 +120,7 @@ export function EventHero({ event }: EventHeroProps) {
         {/* Top bar: back + league badge */}
         <div className="flex items-center justify-between px-5 pt-4 pb-2 sm:px-6">
           <Link
-            href="/"
+            href="/app"
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5",
               "text-base font-medium text-text-secondary",

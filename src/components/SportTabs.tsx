@@ -24,7 +24,7 @@ export function SportTabs({ activeLeague }: SportTabsProps) {
     <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide p-2">
       {/* Today (home) */}
       <Link
-        href="/"
+        href="/app"
         className={cn(
           "flex shrink-0 items-center justify-center self-stretch whitespace-nowrap rounded-2xl px-7 text-base font-bold transition-colors",
           !activeLeague

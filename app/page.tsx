@@ -1,30 +1,19 @@
-"use client";
+import { LandingNav } from "@/src/components/landing/LandingNav";
+import { LandingHero } from "@/src/components/landing/LandingHero";
+import { LandingFeatures } from "@/src/components/landing/LandingFeatures";
+import { LandingShowcase } from "@/src/components/landing/LandingShowcase";
+import { LandingLeagues } from "@/src/components/landing/LandingLeagues";
+import { LandingCTA } from "@/src/components/landing/LandingCTA";
 
-import { Header } from "@/src/components/Header";
-import { SportTabs } from "@/src/components/SportTabs";
-import { EventListing } from "@/src/components/EventListing";
-import { useOdds } from "@/src/lib/hooks/use-odds";
-import { useValueBets } from "@/src/lib/hooks/use-value-bets";
-import { useArbBets } from "@/src/lib/hooks/use-arb-bets";
-
-export default function HomePage() {
-  const { data: oddsData, isLoading: oddsLoading } = useOdds();
-  const { data: valueBets } = useValueBets();
-  const { data: arbBets } = useArbBets();
-
+export default function LandingPage() {
   return (
-    <>
-      <Header />
-      <main className="mx-auto max-w-7xl px-4 py-6 space-y-4">
-        <SportTabs />
-        <EventListing
-          odds={oddsData}
-          isLoading={oddsLoading}
-          valueBets={valueBets}
-          arbBets={arbBets}
-          todayOnly
-        />
-      </main>
-    </>
+    <div className="min-h-screen bg-[#060b12]">
+      <LandingNav />
+      <LandingHero />
+      <LandingFeatures />
+      <LandingShowcase />
+      <LandingLeagues />
+      <LandingCTA />
+    </div>
   );
 }

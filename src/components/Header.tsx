@@ -10,7 +10,7 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-border bg-base/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center">
+          <Link href="/app" className="flex items-center">
             <Image
               src="/logo_dark.svg"
               alt="xBetsAI"
@@ -22,7 +22,7 @@ export function Header() {
           <Separator orientation="vertical" className="!h-5 bg-border" />
           <nav className="flex items-center gap-4">
             <Link
-              href="/"
+              href="/app"
               className="text-sm text-text-secondary hover:text-neon-cyan transition-colors"
             >
               Home
