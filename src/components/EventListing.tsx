@@ -238,7 +238,7 @@ export function EventListing({
     <>
       {/* Week pills — shown on subpages */}
       {!todayOnly && buckets.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide px-1 py-1">
           {buckets.map((bucket) => (
             <button
               key={bucket.key}

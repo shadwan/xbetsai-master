@@ -76,7 +76,7 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
 
   return (
     <div className={cn(
-      "group relative overflow-hidden rounded-2xl border transition-all duration-300",
+      "group relative overflow-hidden rounded-2xl border transition-all duration-300 h-full flex flex-col",
       "bg-[#0d1520] hover:shadow-[0_0_40px_rgba(241,225,133,0.06)]",
       hasArb
         ? "border-neon-yellow/30 hover:border-[#F1E185]/50"
@@ -101,9 +101,9 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
       </div>
 
       {/* Content */}
-      <div className="relative z-10">
+      <div className="relative z-10 flex flex-col flex-1">
         {/* Top row: badges + time (for today's events, time sits in same row) */}
-        <div className="flex items-center gap-2 px-5 pt-4 pb-0">
+        <div className="flex items-center gap-2 px-5 pt-4 pb-0 min-h-[36px]">
           {hasEdge && (
             <span
               className="flex items-center gap-1 rounded-full bg-neon-green/10 px-2.5 py-1 ring-1 ring-neon-green/25"
@@ -171,7 +171,7 @@ export function EventCard({ event, valueBets, arbBets }: EventCardProps) {
 
         {/* Matchup hero */}
         <div className={cn(
-          "flex items-center justify-between px-6 pb-6",
+          "flex items-center justify-between px-6 pb-6 mt-auto",
           live && !hasEdge && !hasArb ? "pt-5" : "pt-2",
         )}>
           {/* Away team */}
