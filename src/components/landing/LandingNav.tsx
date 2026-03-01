@@ -18,6 +18,12 @@ export function LandingNav() {
 
         <div className="flex items-center gap-3">
           <Link
+            href="/features"
+            className="rounded-lg px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:text-text-primary"
+          >
+            Features
+          </Link>
+          <Link
             href="/app"
             className="rounded-lg px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:text-text-primary"
           >

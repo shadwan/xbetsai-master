@@ -30,7 +30,7 @@ export function LandingHero() {
             Start Finding Edges &rarr;
           </Link>
           <Link
-            href="#features"
+            href="/features"
             className="rounded-xl border border-white/10 bg-white/[0.03] px-8 py-3.5 text-base font-semibold text-text-primary transition-all hover:border-white/20 hover:bg-white/[0.06]"
           >
             See How It Works
