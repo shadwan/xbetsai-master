@@ -16,7 +16,6 @@ import type { ArbitrageBet, ConsolidatedOddsEvent } from "@/src/lib/odds-api/typ
 interface SurebetCardProps {
   arb: ArbitrageBet;
   eventOdds: ConsolidatedOddsEvent;
-  dataUpdatedAt: number; // react-query dataUpdatedAt (epoch ms)
 }
 
 const PRESET_STAKES = [50, 100, 250, 500];
@@ -30,11 +29,11 @@ function timeAgo(ms: number): string {
   return `${hours}h ago`;
 }
 
-export function SurebetCard({ arb, eventOdds, dataUpdatedAt }: SurebetCardProps) {
+export function SurebetCard({ arb, eventOdds }: SurebetCardProps) {
   const [totalStake, setTotalStake] = useState(100);
   const [showExplainer, setShowExplainer] = useState(false);
 
-  // Live "Updated X ago" from react-query's dataUpdatedAt
+  // Live "Updated X ago" from the API's updatedAt timestamp
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -42,8 +41,9 @@ export function SurebetCard({ arb, eventOdds, dataUpdatedAt }: SurebetCardProps)
     return () => clearInterval(id);
   }, []);
 
-  const elapsed = Math.max(0, now - dataUpdatedAt);
-  const updatedAgo = dataUpdatedAt > 0 ? timeAgo(elapsed) : null;
+  const apiUpdatedAt = arb.updatedAt ? new Date(arb.updatedAt).getTime() : 0;
+  const elapsed = apiUpdatedAt > 0 ? Math.max(0, now - apiUpdatedAt) : 0;
+  const updatedAgo = apiUpdatedAt > 0 ? timeAgo(elapsed) : null;
 
   // Map "home"/"away" outcomes to actual team names
   const teamNames = useMemo(() => getTeamNames(eventOdds.event), [eventOdds.event]);

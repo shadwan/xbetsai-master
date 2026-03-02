@@ -3,8 +3,8 @@
 // ---------------------------------------------------------------------------
 
 import { EventEmitter } from "node:events";
-import type { Event, ArbitrageBet, ValueBet } from "odds-api-io";
-import type { ConsolidatedOddsEvent } from "@/src/lib/odds-api/types";
+import type { Event, ValueBet } from "odds-api-io";
+import type { ArbitrageBet, ConsolidatedOddsEvent } from "@/src/lib/odds-api/types";
 
 // ── Event map ─────────────────────────────────────────────────────────────
 

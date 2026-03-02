@@ -39,13 +39,11 @@ function EventDetailTabs({
   eventId,
   eventValueBets,
   eventArbBets,
-  arbDataUpdatedAt,
 }: {
   eventOdds: ConsolidatedOddsEvent;
   eventId: string;
   eventValueBets: ValueBet[];
   eventArbBets: ArbitrageBet[];
-  arbDataUpdatedAt: number;
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("odds");
   const [selectedSide, setSelectedSide] = useState<"home" | "away">("home");
@@ -170,7 +168,7 @@ function EventDetailTabs({
             <section className="space-y-3">
               <h2 className="text-xl font-semibold text-text-primary">Surebet Opportunities</h2>
               {eventArbBets.map((arb, i) => (
-                <SurebetCard key={i} arb={arb} eventOdds={eventOdds} dataUpdatedAt={arbDataUpdatedAt} />
+                <SurebetCard key={i} arb={arb} eventOdds={eventOdds} />
               ))}
             </section>
           )}
@@ -270,7 +268,7 @@ export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const { data: eventOdds, isLoading } = useEventOdds(eventId);
   const { data: valueBets } = useValueBets();
-  const { data: arbBets, dataUpdatedAt: arbDataUpdatedAt } = useArbBets();
+  const { data: arbBets } = useArbBets();
 
   const eventValueBets = useMemo(
     () => (valueBets ?? []).filter((vb) => vb.eventId === eventId),
@@ -318,7 +316,6 @@ export default function EventDetailPage() {
               eventId={eventId}
               eventValueBets={eventValueBets}
               eventArbBets={eventArbBets}
-              arbDataUpdatedAt={arbDataUpdatedAt}
             />
           </>
         )}

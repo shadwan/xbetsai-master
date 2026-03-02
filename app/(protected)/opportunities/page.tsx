@@ -33,7 +33,7 @@ function OpportunitiesContent() {
   const [filterTab, setFilterTab] = useState<FilterTab>("all");
 
   const { data: valueBets, isLoading: vbLoading } = useValueBets();
-  const { data: arbBets, isLoading: arbLoading, dataUpdatedAt: arbUpdatedAt } = useArbBets();
+  const { data: arbBets, isLoading: arbLoading } = useArbBets();
   const { data: eventsData } = useEvents();
 
   // Tick every 10s so freshness display updates without calling Date.now() in render
@@ -97,6 +97,19 @@ function OpportunitiesContent() {
 
   const isLoading = vbLoading || arbLoading;
 
+  // Derive the most recent updatedAt from arb data (API timestamp)
+  const arbUpdatedAt = useMemo(() => {
+    if (!filteredArbBets.length) return 0;
+    let latest = 0;
+    for (const ab of filteredArbBets) {
+      if (ab.updatedAt) {
+        const t = new Date(ab.updatedAt).getTime();
+        if (t > latest) latest = t;
+      }
+    }
+    return latest;
+  }, [filteredArbBets]);
+
   // Freshness check for arb bets
   const arbStale = arbUpdatedAt > 0 && now - arbUpdatedAt > 2 * 60 * 1000;
 
@@ -104,7 +117,10 @@ function OpportunitiesContent() {
     if (!timestamp) return "";
     const seconds = Math.floor((now - timestamp) / 1000);
     if (seconds < 60) return `${seconds}s ago`;
-    return `${Math.floor(seconds / 60)}m ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
   }
 
   const TABS: { key: FilterTab; label: string }[] = [
@@ -298,7 +314,14 @@ function OpportunitiesContent() {
                             <span className="text-xs text-text-tertiary">{league}</span>
                           )}
                         </Link>
-                        <ArbBadge profitPercentage={arb.profitPercentage} />
+                        <div className="flex items-center gap-2">
+                          {arb.updatedAt && (
+                            <span className="text-xs text-text-tertiary">
+                              {relativeTime(new Date(arb.updatedAt).getTime())}
+                            </span>
+                          )}
+                          <ArbBadge profitPercentage={arb.profitPercentage} />
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-3 text-sm">
                         {arb.legs?.map((leg, j) => {

@@ -20,7 +20,6 @@ export type {
   HistoricalEventOdds,
   HistoricalOddsMarket,
   HistoricalOddsSelection,
-  ArbitrageBet,
   ValueBet,
   OddsAPIClientConfig,
   GetEventsParams,
@@ -34,6 +33,21 @@ export type {
   GetArbitrageBetsParams,
   GetValueBetsParams,
 } from "odds-api-io";
+
+import type { ArbitrageBet as SdkArbitrageBet } from "odds-api-io";
+
+/** Extended ArbitrageBet — includes fields from raw API that the SDK type omits. */
+export interface ArbitrageBet extends Omit<SdkArbitrageBet, "legs"> {
+  legs: Array<{
+    outcome: string;
+    bookmaker: string;
+    odds: number;
+    stake?: number;
+    href?: string;
+  }>;
+  /** ISO 8601 timestamp from the API indicating when this arb was last verified. */
+  updatedAt?: string;
+}
 
 // ── WebSocket types (match WS guide field names) ─────────────────────────
 

@@ -65,6 +65,7 @@ const LEAGUE_TO_FOLDER: Record<string, string> = {
   "usa-nhl": "nhl",
   "usa-ncaaf": "ncaaf",
   "usa-ncaab": "ncaamb",
+  "usa-ncaa-regular-season": "ncaamb",
 };
 
 // ── Lookup helpers ───────────────────────────────────────────────────────────

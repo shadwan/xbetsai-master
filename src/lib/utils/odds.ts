@@ -193,6 +193,7 @@ export function normalizeArbBet(raw: Record<string, unknown>): {
   profitPercentage: number;
   legs: Array<{ outcome: string; bookmaker: string; odds: number; stake?: number; href?: string }>;
   event?: Event;
+  updatedAt?: string;
 } {
   const mkt = raw.market as Record<string, unknown> | string | undefined;
   const marketName =
@@ -220,8 +221,10 @@ export function normalizeArbBet(raw: Record<string, unknown>): {
       bookmaker: String(leg.bookmaker ?? ""),
       odds: parseFloat(String(leg.odds ?? 0)),
       stake: stakeMap.get(`${leg.bookmaker}:${leg.side}`) ?? undefined,
+      href: leg.href ? String(leg.href) : undefined,
     })),
     event: raw.event as Event | undefined,
+    updatedAt: raw.updatedAt ? String(raw.updatedAt) : undefined,
   };
 }
 

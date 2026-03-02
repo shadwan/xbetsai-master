@@ -45,6 +45,7 @@ const LEAGUE_TO_MANIFEST: Record<string, string> = {
   "usa-nhl": "nhl",
   "usa-ncaaf": "ncaaf",
   "usa-ncaab": "ncaamb",
+  "usa-ncaa-regular-season": "ncaamb",
 };
 
 // ── Lookup ───────────────────────────────────────────────────────────────────

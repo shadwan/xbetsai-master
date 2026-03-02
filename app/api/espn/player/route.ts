@@ -11,6 +11,7 @@ const ESPN_SPORTS: Record<string, { sport: string; league: string }> = {
   "usa-nhl": { sport: "hockey", league: "nhl" },
   "usa-ncaaf": { sport: "football", league: "college-football" },
   "usa-ncaab": { sport: "basketball", league: "mens-college-basketball" },
+  "usa-ncaa-regular-season": { sport: "basketball", league: "mens-college-basketball" },
 };
 
 // ── In-memory cache (24hr TTL) ──────────────────────────────────────────────
