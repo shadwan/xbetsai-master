@@ -37,7 +37,7 @@ export const SPORTS = [
   { displayName: "MLB", sportSlug: "baseball", leagueSlug: "usa-mlb", season: "Mar-Nov" },
   { displayName: "NHL", sportSlug: "ice-hockey", leagueSlug: "usa-nhl", season: "Oct-Jun" },
   { displayName: "CFB", sportSlug: "american-football", leagueSlug: "usa-ncaaf", season: "Aug-Jan" },
-  { displayName: "CBB", sportSlug: "basketball", leagueSlug: "usa-ncaab", season: "Nov-Apr" },
+  { displayName: "CBB", sportSlug: "basketball", leagueSlug: "usa-ncaa-regular-season", season: "Nov-Apr" },
 ] as const satisfies readonly SportConfig[];
 
 export type LeagueSlug = (typeof SPORTS)[number]["leagueSlug"];
