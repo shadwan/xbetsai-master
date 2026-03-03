@@ -21,7 +21,7 @@ import type {
   WsOddsOutcome,
   ArbitrageBet,
 } from "@/src/lib/odds-api/types";
-import { normalizeValueBet, normalizeArbBet } from "@/src/lib/utils/odds";
+import { normalizeValueBet, normalizeArbBet, fixBookmakerMarkets } from "@/src/lib/utils/odds";
 
 // ── Module state ─────────────────────────────────────────────────────────
 
@@ -46,7 +46,7 @@ function sleep(ms: number): Promise<void> {
  */
 function transformOddsToCache(
   eventOdds: EventOdds,
-): Map<string, { url: string; markets: WsMarket[] }> {
+): Map<string, { url: string; markets: readonly WsMarket[] }> {
   // Group: bookmaker → market → outcomes
   const byBookie = new Map<
     string,
@@ -104,7 +104,7 @@ function transformOddsToCache(
   }
 
   // Convert to final shape
-  const result = new Map<string, { url: string; markets: WsMarket[] }>();
+  const result = new Map<string, { url: string; markets: readonly WsMarket[] }>();
 
   for (const [bookie, marketsMap] of byBookie) {
     const markets: WsMarket[] = [];
@@ -115,7 +115,7 @@ function transformOddsToCache(
         odds: entry.outcomes,
       });
     }
-    result.set(bookie, { url: "", markets });
+    result.set(bookie, { url: "", markets: fixBookmakerMarkets(bookie, markets) });
   }
 
   return result;
@@ -228,7 +228,7 @@ function storeMultiEventOdds(results: unknown[]): void {
         if (!Array.isArray(markets)) continue;
         cache.set(
           `odds:${eventId}:${bookie}`,
-          { url: urls[bookie] ?? "", markets },
+          { url: urls[bookie] ?? "", markets: fixBookmakerMarkets(bookie, markets) },
           CACHE_TTL.ODDS_REST,
           "rest",
         );

@@ -11,6 +11,7 @@ import {
   WS_SPORTS,
   CACHE_TTL,
 } from "@/src/lib/odds-api/constants";
+import { fixBookmakerMarkets } from "@/src/lib/utils/odds";
 import type {
   WsMessage,
   WsCreatedMessage,
@@ -39,7 +40,7 @@ function buildUrl(): string {
 function handleCreated(msg: WsCreatedMessage): void {
   cache.set(
     `odds:${msg.id}:${msg.bookie}`,
-    { url: msg.url, markets: msg.markets },
+    { url: msg.url, markets: fixBookmakerMarkets(msg.bookie, msg.markets) },
     CACHE_TTL.ODDS_WS,
     "ws",
   );
@@ -55,7 +56,7 @@ function handleCreated(msg: WsCreatedMessage): void {
 function handleUpdated(msg: WsUpdatedMessage): void {
   cache.set(
     `odds:${msg.id}:${msg.bookie}`,
-    { url: msg.url, markets: msg.markets },
+    { url: msg.url, markets: fixBookmakerMarkets(msg.bookie, msg.markets) },
     CACHE_TTL.ODDS_WS,
     "ws",
   );
