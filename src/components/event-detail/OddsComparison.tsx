@@ -47,6 +47,17 @@ interface MarketGroup {
 
 const MARKET_ORDER = ["ML", "Spread", "Totals"] as const;
 
+/** Return a short human-readable staleness string and a severity color. */
+function formatStaleness(ms: number): { label: string; color: string } {
+  const secs = Math.floor(ms / 1000);
+  if (secs < 60) return { label: `${secs}s`, color: "text-green-400" };
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return { label: `${mins}m`, color: mins <= 5 ? "text-green-400" : mins <= 15 ? "text-yellow-400" : "text-orange-400" };
+  const hrs = Math.floor(mins / 60);
+  const remMins = mins % 60;
+  return { label: remMins > 0 ? `${hrs}h${remMins}m` : `${hrs}h`, color: "text-red-400" };
+}
+
 // ── Bookmaker deduplication ──────────────────────────────────────────────────
 
 /**
@@ -1038,6 +1049,23 @@ export function OddsComparison({
     return urls;
   }, [dedupedOdds.bookmakers]);
 
+  // Compute per-bookmaker staleness (latest updatedAt across all markets)
+  const bookmakerStaleness = useMemo(() => {
+    const now = Date.now();
+    const result: Record<string, { ms: number; label: string; color: string }> = {};
+    for (const [bk, data] of Object.entries(dedupedOdds.bookmakers)) {
+      let latestTs = 0;
+      for (const m of data.markets) {
+        const ts = new Date(m.updatedAt).getTime();
+        if (ts > latestTs) latestTs = ts;
+      }
+      const ms = latestTs > 0 ? now - latestTs : Infinity;
+      const { label, color } = formatStaleness(ms);
+      result[bk] = { ms, label, color };
+    }
+    return result;
+  }, [dedupedOdds.bookmakers]);
+
   // Build market groups
   const groups = useMemo(
     () =>
@@ -1120,6 +1148,7 @@ export function OddsComparison({
                 const abbr = abbreviateBookmaker(bk);
                 // Strip parenthetical suffixes for display (e.g. "Bet365 (no latency)" → "Bet365")
                 const fullName = bk.replace(/\s*\([^)]*\)\s*$/, "").trim();
+                const staleness = bookmakerStaleness[bk];
                 return (
                   <div
                     key={bk}
@@ -1132,6 +1161,11 @@ export function OddsComparison({
                     {abbr !== fullName && (
                       <span className="text-base text-text-tertiary truncate max-w-full">
                         {fullName}
+                      </span>
+                    )}
+                    {staleness && (
+                      <span className={cn("text-[11px] tabular-nums", staleness.color)}>
+                        {staleness.label} ago
                       </span>
                     )}
                   </div>

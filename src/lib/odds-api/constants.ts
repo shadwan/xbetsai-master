@@ -96,8 +96,41 @@ export const CACHE_TTL = {
 // ── Poll intervals (milliseconds) ──────────────────────────────────────────
 
 export const POLL_INTERVAL = {
-  EVENTS: 60 * 1_000,     // 60 s  — moderate refresh
-  ODDS: 4 * 60 * 1_000,   // 4 min — refresh before 5-min TTL expires
-  VALUE_BETS: 15 * 1_000, // 15 s  — time-sensitive but don't hammer API
-  ARB_BETS: 15 * 1_000,   // 15 s  — same reasoning
+  EVENTS: 60 * 1_000,          // 60 s  — moderate refresh
+  ODDS: 4 * 60 * 1_000,        // 4 min — refresh before 5-min TTL expires
+  ODDS_DELTA: 15 * 1_000,      // 15 s  — delta poller via /v3/odds/updated
+  VALUE_BETS: 15 * 1_000,      // 15 s  — time-sensitive but don't hammer API
+  ARB_BETS: 15 * 1_000,        // 15 s  — same reasoning
 } as const;
+
+// ── Delta poller: sport slug → API sport name mapping ──────────────────────
+// The /v3/odds/updated endpoint requires a capitalised sport name.
+export const SPORT_SLUG_TO_API_NAME: Record<string, string> = {
+  "basketball": "Basketball",
+  "american-football": "American Football",
+  "baseball": "Baseball",
+  "ice-hockey": "Ice Hockey",
+};
+
+/**
+ * Returns deduplicated API sport names for leagues that are both
+ * in-season AND have active events in the cache.
+ */
+export function getActiveDeltaSports(activeSports: ReadonlySet<string>): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const s of SPORTS) {
+    // Skip if no cached events for this league
+    if (!activeSports.has(s.leagueSlug)) continue;
+    // Skip if out of season
+    if (!isInSeason(s.season)) continue;
+    // Dedupe by sport slug (NBA + CBB both map to "Basketball")
+    const apiName = SPORT_SLUG_TO_API_NAME[s.sportSlug];
+    if (!apiName || seen.has(apiName)) continue;
+    seen.add(apiName);
+    result.push(apiName);
+  }
+
+  return result;
+}

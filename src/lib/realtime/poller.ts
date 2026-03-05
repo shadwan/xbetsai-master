@@ -12,6 +12,7 @@ import {
   BOOKMAKERS_PARAM,
   CACHE_TTL,
   POLL_INTERVAL,
+  getActiveDeltaSports,
 } from "@/src/lib/odds-api/constants";
 import type {
   EventOdds,
@@ -30,6 +31,7 @@ const activeSports = new Set<string>(); // league slugs with >0 events
 const timers: ReturnType<typeof setTimeout>[] = [];
 let wsFallbackActive = false;
 let wsFallbackTimer: ReturnType<typeof setInterval> | null = null;
+let lastDeltaTimestamp = 0; // tracks the `since` param for delta poller
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -463,6 +465,55 @@ function startWsFallbackChecker(): void {
   timers.push(timer as unknown as ReturnType<typeof setTimeout>);
 }
 
+// ── 8b. Delta odds poller — /v3/odds/updated for near-real-time freshness ──
+
+/** Poll each bookmaker × active in-season sport for odds changes since the last poll. */
+async function pollOddsDelta(): Promise<void> {
+  // On first run, seed the timestamp to "now" so we don't miss the window
+  if (lastDeltaTimestamp === 0) {
+    lastDeltaTimestamp = Math.floor(Date.now() / 1000);
+    return; // first tick just initialises the timestamp
+  }
+
+  const sports = getActiveDeltaSports(activeSports);
+  if (sports.length === 0) return; // nothing in-season or no active events
+
+  const now = Math.floor(Date.now() / 1000);
+  // The API only accepts timestamps within the last 60 seconds
+  const since = Math.max(lastDeltaTimestamp, now - 58);
+  lastDeltaTimestamp = now;
+
+  let totalUpdated = 0;
+
+  for (const bookmaker of BOOKMAKERS) {
+    for (const sport of sports) {
+      try {
+        const results = await oddsClient.getUpdatedOddsSince({
+          since,
+          bookmaker,
+          sport,
+        });
+
+        const arr = Array.isArray(results) ? results : [results];
+        if (arr.length > 0) {
+          storeMultiEventOdds(arr as unknown[]);
+          totalUpdated += arr.length;
+        }
+      } catch (err) {
+        const msg = (err as Error).message;
+        // Silence "no updates" / 404 style errors
+        if (!msg.includes("404") && !msg.includes("not found")) {
+          console.warn(`[poller] Delta odds error (${bookmaker}/${sport}):`, msg);
+        }
+      }
+    }
+  }
+
+  if (totalUpdated > 0) {
+    console.log(`[poller] Delta odds: ${totalUpdated} event-bookmaker updates (${sports.join(", ")})`);
+  }
+}
+
 // ── Periodic stats logging ───────────────────────────────────────────────
 
 function startStatsLogger(): void {
@@ -685,6 +736,15 @@ export async function startPollers(): Promise<void> {
       );
     }, POLL_INTERVAL.ODDS);
     timers.push(oddsRefreshTimer as unknown as ReturnType<typeof setTimeout>);
+
+    // 5c. Delta odds poller — near-real-time updates via /v3/odds/updated
+    pollOddsDelta(); // seed the initial timestamp
+    const oddsDeltaTimer = setInterval(() => {
+      pollOddsDelta().catch((err) =>
+        console.warn("[poller] Delta odds poll error:", (err as Error).message),
+      );
+    }, POLL_INTERVAL.ODDS_DELTA);
+    timers.push(oddsDeltaTimer as unknown as ReturnType<typeof setTimeout>);
 
     // 6. WS fallback checker
     startWsFallbackChecker();
