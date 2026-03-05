@@ -1,7 +1,9 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { Email } from "@convex-dev/auth/providers/Email";
+import { Password } from "@convex-dev/auth/providers/Password";
 import { internal } from "./_generated/api";
 
+// ── Magic-link / OTP provider via Resend ────────────────────────────────────
 const ResendOTP = Email({
   id: "resend-otp",
   maxAge: 15 * 60, // 15 minutes
@@ -56,8 +58,19 @@ const ResendOTP = Email({
   },
 });
 
+// ── Password provider (email + password) ────────────────────────────────────
+const PasswordAuth = Password({
+  id: "password",
+  profile(params) {
+    return {
+      email: params.email as string,
+      ...(params.name ? { name: params.name as string } : {}),
+    };
+  },
+});
+
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [ResendOTP],
+  providers: [ResendOTP, PasswordAuth],
   callbacks: {
     afterUserCreatedOrUpdated: async (ctx, args) => {
       // Only send welcome email for newly created users (not updates)

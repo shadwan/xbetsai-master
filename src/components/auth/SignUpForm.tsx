@@ -7,13 +7,37 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
+type AuthMethod = "password" | "magic-link";
+
 export function SignUpForm() {
   const { signIn } = useAuthActions();
-  const [step, setStep] = useState<"email" | "code">("email");
+  const [method, setMethod] = useState<AuthMethod>("password");
+  const [step, setStep] = useState<"form" | "code">("form");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const handlePasswordSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signIn("password", { email, password, name, flow: "signUp" });
+    } catch {
+      setError("Failed to create account. Email may already be in use.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +68,7 @@ export function SignUpForm() {
     }
   };
 
+  // OTP verification step
   if (step === "code") {
     return (
       <form onSubmit={handleVerifyCode} className="space-y-4">
@@ -88,7 +113,7 @@ export function SignUpForm() {
           <button
             type="button"
             onClick={() => {
-              setStep("email");
+              setStep("form");
               setCode("");
               setError("");
             }}
@@ -121,17 +146,35 @@ export function SignUpForm() {
   }
 
   return (
-    <form onSubmit={handleSendCode} className="space-y-4">
+    <form
+      onSubmit={method === "password" ? handlePasswordSignUp : handleSendCode}
+      className="space-y-4"
+    >
       <div className="space-y-1.5">
         <h1 className="text-xl font-bold text-text-primary">Create account</h1>
         <p className="text-sm text-text-secondary">
-          Get started with xBetsAI — we&apos;ll send you a verification code
+          {method === "password"
+            ? "Sign up with your email and password"
+            : "We'll send you a verification code to get started"}
         </p>
       </div>
 
       {error && (
         <div className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
           {error}
+        </div>
+      )}
+
+      {method === "password" && (
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="Your name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
         </div>
       )}
 
@@ -147,8 +190,53 @@ export function SignUpForm() {
         />
       </div>
 
+      {method === "password" && (
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+          />
+          <p className="text-xs text-text-secondary">Minimum 8 characters</p>
+        </div>
+      )}
+
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Sending code…" : "Continue with Email"}
+        {loading
+          ? method === "password"
+            ? "Creating account…"
+            : "Sending code…"
+          : method === "password"
+            ? "Create Account"
+            : "Send Verification Code"}
+      </Button>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-white/10" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-surface-1 px-2 text-text-secondary">or</span>
+        </div>
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full"
+        onClick={() => {
+          setMethod(method === "password" ? "magic-link" : "password");
+          setError("");
+        }}
+      >
+        {method === "password"
+          ? "Sign up with Magic Link"
+          : "Sign up with Password"}
       </Button>
 
       <p className="text-center text-sm text-text-secondary">

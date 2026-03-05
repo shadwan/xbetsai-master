@@ -7,13 +7,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
+type AuthMethod = "password" | "magic-link";
+
 export function SignInForm() {
   const { signIn } = useAuthActions();
-  const [step, setStep] = useState<"email" | "code">("email");
+  const [method, setMethod] = useState<AuthMethod>("password");
+  const [step, setStep] = useState<"form" | "code">("form");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const handlePasswordSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      await signIn("password", { email, password, flow: "signIn" });
+    } catch {
+      setError("Invalid email or password.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +62,7 @@ export function SignInForm() {
     }
   };
 
+  // OTP verification step
   if (step === "code") {
     return (
       <form onSubmit={handleVerifyCode} className="space-y-4">
@@ -88,7 +107,7 @@ export function SignInForm() {
           <button
             type="button"
             onClick={() => {
-              setStep("email");
+              setStep("form");
               setCode("");
               setError("");
             }}
@@ -121,11 +140,16 @@ export function SignInForm() {
   }
 
   return (
-    <form onSubmit={handleSendCode} className="space-y-4">
+    <form
+      onSubmit={method === "password" ? handlePasswordSignIn : handleSendCode}
+      className="space-y-4"
+    >
       <div className="space-y-1.5">
         <h1 className="text-xl font-bold text-text-primary">Welcome back</h1>
         <p className="text-sm text-text-secondary">
-          Enter your email to sign in with a verification code
+          {method === "password"
+            ? "Sign in with your email and password"
+            : "We'll send you a verification code"}
         </p>
       </div>
 
@@ -147,8 +171,51 @@ export function SignInForm() {
         />
       </div>
 
+      {method === "password" && (
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+      )}
+
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Sending code…" : "Continue with Email"}
+        {loading
+          ? method === "password"
+            ? "Signing in…"
+            : "Sending code…"
+          : method === "password"
+            ? "Sign In"
+            : "Send Verification Code"}
+      </Button>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-white/10" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-surface-1 px-2 text-text-secondary">or</span>
+        </div>
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full"
+        onClick={() => {
+          setMethod(method === "password" ? "magic-link" : "password");
+          setError("");
+        }}
+      >
+        {method === "password"
+          ? "Sign in with Magic Link"
+          : "Sign in with Password"}
       </Button>
 
       <p className="text-center text-sm text-text-secondary">
