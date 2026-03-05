@@ -24,13 +24,13 @@ export function LandingNav() {
             Features
           </Link>
           <Link
-            href="/app"
+            href="/sign-in"
             className="rounded-lg px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:text-text-primary"
           >
             Sign In
           </Link>
           <Link
-            href="/app"
+            href="/sign-up"
             className="rounded-lg bg-neon-gold px-4 py-2 text-sm font-bold text-[#0a0f18] transition-all hover:brightness-110"
           >
             Get Started &rarr;

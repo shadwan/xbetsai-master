@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import { SSEIndicator } from "./SSEIndicator";
+import { UserButton } from "./auth/UserButton";
 
 export function Header() {
   return (
@@ -35,7 +36,10 @@ export function Header() {
             </Link>
           </nav>
         </div>
-        <SSEIndicator />
+        <div className="flex items-center gap-3">
+          <SSEIndicator />
+          <UserButton />
+        </div>
       </div>
     </header>
   );
