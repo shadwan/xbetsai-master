@@ -18,11 +18,11 @@ export const WS_URL = "wss://api.odds-api.io/v3/ws" as const;
 
 // TODO: verify exact display names via GET /v3/bookmakers
 export const BOOKMAKERS = [
-  "FanDuel",
-  "BetMGM",
   "Bet365",
-  "Caesars",
   "DraftKings",
+  "FanDuel",
+  "Unibet",
+  "BetMGM",
 ] as const;
 
 export const BOOKMAKERS_PARAM = BOOKMAKERS.join(",");
