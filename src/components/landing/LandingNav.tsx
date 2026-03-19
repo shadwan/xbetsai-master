@@ -17,12 +17,12 @@ export function LandingNav() {
         </Link>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/features"
+          <a
+            href="#features"
             className="rounded-lg px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:text-text-primary"
           >
             Features
-          </Link>
+          </a>
           <Link
             href="/sign-in"
             className="rounded-lg px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:text-text-primary"

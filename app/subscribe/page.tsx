@@ -83,11 +83,6 @@ export default function SubscribePage() {
               {portalLoading ? "Loading…" : "Manage existing billing"}
             </Button>
           )}
-          <Link href="/app" className="mt-4">
-            <Button variant="ghost" className="text-sm text-text-secondary hover:text-text-primary">
-              Skip for now
-            </Button>
-          </Link>
         </>
       ) : (
         <div className="text-center space-y-4">

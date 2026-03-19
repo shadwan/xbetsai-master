@@ -12,18 +12,19 @@ export function LandingCTA() {
 
           <div className="relative">
             <h2 className="text-3xl font-[800] tracking-tight text-text-primary sm:text-4xl">
-              Start Finding +EV Bets Today
+              Ready to Bet Smarter?
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-lg text-text-secondary">
-              Join thousands of sharp bettors using AI-powered analysis to find
-              profitable opportunities across every major sportsbook.
+              Join thousands of bettors who use xBetsAI to find better odds,
+              spot guaranteed winners, and make more informed bets across every
+              major sportsbook.
             </p>
             <div className="mt-8">
               <Link
-                href="/app"
+                href="/sign-up"
                 className="inline-block rounded-xl bg-neon-gold px-10 py-4 text-base font-bold text-[#0a0f18] shadow-[0_0_30px_rgba(241,225,133,0.2)] transition-all hover:shadow-[0_0_40px_rgba(241,225,133,0.35)] hover:brightness-110"
               >
-                Get Started &rarr;
+                Get Started Free &rarr;
               </Link>
             </div>
           </div>

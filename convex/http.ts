@@ -21,6 +21,15 @@ registerRoutes(http, components.stripe, {
 
       if (!userId || !customerEmail) return;
 
+      // Sync customer name from Stripe to users table if missing
+      const customerName = session.customer_details?.name;
+      if (customerName) {
+        await ctx.runMutation(internal.emailHelpers.updateUserName, {
+          userId: userId as string,
+          name: customerName,
+        });
+      }
+
       const user = await ctx.runQuery(internal.emailHelpers.getUserById, {
         userId: userId as string,
       });
@@ -31,7 +40,7 @@ registerRoutes(http, components.stripe, {
         {
           userId,
           email: customerEmail,
-          name: user?.name ?? "there",
+          name: user?.name ?? customerName ?? "there",
           planName: "Pro",
         }
       );

@@ -1,42 +1,60 @@
-import { BarChart3, Zap, Trophy, Users } from "lucide-react";
+import { BarChart3, Zap, Trophy, TrendingUp, Radio, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const FEATURES = [
   {
     icon: BarChart3,
-    title: "Real-Time Odds",
+    title: "Side-by-Side Odds",
     description:
-      "Compare odds across DraftKings, FanDuel, BetMGM, Caesars, and Bet365 — updated in real time via WebSocket.",
+      "See prices from DraftKings, FanDuel, BetMGM, Unibet, and Bet365 next to each other. The best price is highlighted so you never bet at the wrong book.",
     accent: "text-neon-gold",
     bg: "bg-neon-gold/10",
     ring: "ring-neon-gold/20",
   },
   {
     icon: Zap,
-    title: "+EV Detection",
+    title: "Smart Bet Finder",
     description:
-      "Our engine calculates fair odds from market consensus and surfaces positive expected value bets instantly.",
+      "We crunch the numbers across every sportsbook and tell you when a bet is priced higher than it should be. That means the odds are in your favor.",
     accent: "text-neon-green",
     bg: "bg-neon-green/10",
     ring: "ring-neon-green/20",
   },
   {
     icon: Trophy,
-    title: "Arbitrage Finder",
+    title: "Surebet Guaranteed Winners",
     description:
-      "Automatically detects surebet opportunities across books — guaranteed profit regardless of outcome.",
+      "When two sportsbooks disagree on the odds, you can bet both sides and lock in a profit no matter who wins. We find those for you automatically.",
     accent: "text-neon-yellow",
     bg: "bg-neon-yellow/10",
     ring: "ring-neon-yellow/20",
   },
   {
     icon: Users,
-    title: "Player Props",
+    title: "Player Props Analytics",
     description:
-      "Deep prop market analysis with player-level odds comparison, powered by ESPN roster data.",
+      "Compare player prop bets (points, rebounds, assists, strikeouts, and more) across every book to find the best lines and spot mispriced odds.",
     accent: "text-purple-400",
     bg: "bg-purple-400/10",
     ring: "ring-purple-400/20",
+  },
+  {
+    icon: TrendingUp,
+    title: "Line Movement Tracker",
+    description:
+      "Watch how odds change over time. See which direction the money is moving so you can decide when to place your bet.",
+    accent: "text-neon-cyan",
+    bg: "bg-neon-cyan/10",
+    ring: "ring-neon-cyan/20",
+  },
+  {
+    icon: Radio,
+    title: "Live Updates",
+    description:
+      "Odds update in real time as they change. No need to refresh the page — new prices, alerts, and opportunities show up instantly.",
+    accent: "text-neon-red",
+    bg: "bg-neon-red/10",
+    ring: "ring-neon-red/20",
   },
 ] as const;
 
@@ -46,14 +64,15 @@ export function LandingFeatures() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
           <h2 className="text-3xl font-[800] tracking-tight text-text-primary sm:text-4xl">
-            Your Unfair Advantage
+            Everything You Need to Bet Smarter
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-text-secondary">
-            Everything you need to find profitable bets, in one dashboard.
+            One dashboard with every tool to find better bets, better prices, and
+            guaranteed winners.
           </p>
         </div>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
             <div
               key={f.title}

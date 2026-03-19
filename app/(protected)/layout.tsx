@@ -24,6 +24,12 @@ export default function ProtectedLayout({
     }
   }, [authLoading, isAuthenticated, router]);
 
+  useEffect(() => {
+    if (user && !user.hasActiveSubscription && user.role !== "admin") {
+      router.replace("/subscribe");
+    }
+  }, [user, router]);
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-base">
@@ -41,6 +47,8 @@ export default function ProtectedLayout({
       </div>
     );
   }
+
+  if (user && !user.hasActiveSubscription && user.role !== "admin") return null;
 
   return <>{children}</>;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useQuery } from "convex/react";
+import { useQuery, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -11,12 +11,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CreditCard, LogOut, Shield, User } from "lucide-react";
+import { CreditCard, LogOut, Shield } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 export function UserButton() {
   const { signOut } = useAuthActions();
   const user = useQuery(api.users.currentUser);
+  const createPortal = useAction(api.stripe.createPortalSession);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   if (!user) return null;
 
@@ -45,11 +48,24 @@ export function UserButton() {
           <p className="text-xs text-text-secondary">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/subscribe" className="cursor-pointer">
-            <CreditCard className="mr-2 h-4 w-4" />
-            Manage Subscription
-          </Link>
+        <DropdownMenuItem
+          className="cursor-pointer"
+          disabled={portalLoading}
+          onClick={async () => {
+            setPortalLoading(true);
+            try {
+              const url = await createPortal();
+              window.location.href = url;
+            } catch {
+              // If no billing account, send to subscribe page
+              window.location.href = "/subscribe";
+            } finally {
+              setPortalLoading(false);
+            }
+          }}
+        >
+          <CreditCard className="mr-2 h-4 w-4" />
+          {portalLoading ? "Loading…" : "Manage Subscription"}
         </DropdownMenuItem>
         {user.role === "admin" && (
           <DropdownMenuItem asChild>

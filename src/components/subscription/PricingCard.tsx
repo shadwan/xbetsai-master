@@ -15,14 +15,17 @@ const features = [
   "6 major sports leagues",
 ];
 
+type Plan = "monthly" | "annual";
+
 export function PricingCard() {
   const createCheckout = useAction(api.stripe.createCheckoutSession);
   const [loading, setLoading] = useState(false);
+  const [plan, setPlan] = useState<Plan>("monthly");
 
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      const url = await createCheckout();
+      const url = await createCheckout({ plan });
       window.location.href = url;
     } catch (err) {
       console.error("Failed to create checkout session:", err);
@@ -37,10 +40,51 @@ export function PricingCard() {
         <div className="mb-2 inline-block rounded-full bg-neon-gold/10 px-3 py-1 text-xs font-semibold text-neon-gold">
           PRO
         </div>
-        <div className="mt-3 flex items-baseline justify-center gap-1">
-          <span className="text-4xl font-bold text-text-primary">$29</span>
-          <span className="text-text-secondary">/month</span>
+
+        {/* Plan toggle */}
+        <div className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-surface-1 p-1">
+          <button
+            onClick={() => setPlan("monthly")}
+            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              plan === "monthly"
+                ? "bg-neon-gold/20 text-neon-gold"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setPlan("annual")}
+            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              plan === "annual"
+                ? "bg-neon-gold/20 text-neon-gold"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            Annual
+          </button>
         </div>
+
+        <div className="mt-4 flex items-baseline justify-center gap-1">
+          {plan === "monthly" ? (
+            <>
+              <span className="text-4xl font-bold text-text-primary">$14.99</span>
+              <span className="text-text-secondary">/month</span>
+            </>
+          ) : (
+            <>
+              <span className="text-4xl font-bold text-text-primary">$100</span>
+              <span className="text-text-secondary">/year</span>
+            </>
+          )}
+        </div>
+
+        {plan === "annual" && (
+          <p className="mt-1 text-sm font-medium text-neon-green">
+            Save $79.88 vs monthly
+          </p>
+        )}
+
         <p className="mt-2 text-sm text-text-secondary">
           Full access to all xBetsAI features
         </p>
@@ -60,7 +104,7 @@ export function PricingCard() {
         disabled={loading}
         className="w-full bg-neon-gold text-[#0a0f18] font-bold hover:brightness-110"
       >
-        {loading ? "Redirecting…" : "Subscribe to Pro"}
+        {loading ? "Redirecting…" : `Subscribe — ${plan === "monthly" ? "$14.99/mo" : "$100/yr"}`}
       </Button>
     </div>
   );
