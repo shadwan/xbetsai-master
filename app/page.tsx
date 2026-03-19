@@ -5,6 +5,7 @@ import { LandingFeatureDetails } from "@/src/components/landing/LandingFeatureDe
 import { LandingShowcase } from "@/src/components/landing/LandingShowcase";
 import { LandingLeagues } from "@/src/components/landing/LandingLeagues";
 import { LandingCTA } from "@/src/components/landing/LandingCTA";
+import { LandingFooter } from "@/src/components/landing/LandingFooter";
 
 export default function LandingPage() {
   return (
@@ -16,6 +17,7 @@ export default function LandingPage() {
       <LandingShowcase />
       <LandingLeagues />
       <LandingCTA />
+      <LandingFooter />
     </div>
   );
 }
