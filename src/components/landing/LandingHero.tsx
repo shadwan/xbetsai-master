@@ -13,7 +13,7 @@ export function LandingHero() {
         <h1 className="text-4xl font-[800] leading-[1.1] tracking-tight text-text-primary sm:text-5xl lg:text-7xl">
           Stop Guessing.{" "}
           <span className="bg-gradient-to-r from-neon-gold via-[#f5e6a3] to-neon-gold bg-clip-text text-transparent">
-            Start Winning.
+            Let AI Find Your Edge.
           </span>
         </h1>
 
