@@ -52,40 +52,15 @@ export function getLeagueSlug(event: Event): string {
 //
 // The Odds-API upstream feed for BetMGM systematically swaps home/away odds
 // (confirmed across 10/10 NBA events — every ML entry has the values reversed
-// compared to Bet365, DraftKings, FanDuel, and Caesars).
-//
-// This workaround swaps `home` ↔ `away` fields in any odds entry for BetMGM.
-// Totals (over/under) and other non-directional markets are unaffected.
-// If the API ever fixes this, remove the BETMGM_SWAP_BOOKMAKERS set.
-//
-const BETMGM_SWAP_BOOKMAKERS = new Set(["BetMGM"]);
-
-/** Swap home ↔ away in a single odds entry (mutates nothing — returns new object). */
-function swapHomeAway(outcome: WsOddsOutcome): WsOddsOutcome {
-  if (outcome.home == null && outcome.away == null) return outcome;
-  const swapped: Record<string, unknown> = { ...outcome };
-  if (outcome.home != null) swapped.away = outcome.home;
-  else delete swapped.away;
-  if (outcome.away != null) swapped.home = outcome.away;
-  else delete swapped.home;
-  // Flip spread hdp sign (home team handicap becomes away and vice versa)
-  if (outcome.hdp != null) swapped.hdp = -outcome.hdp;
-  return swapped as WsOddsOutcome;
-}
-
 /**
- * If the bookmaker is known to have flipped home/away data, return corrected
- * markets. Otherwise returns the input unchanged.
+ * Previously swapped BetMGM home/away data due to an API bug.
+ * The API has been fixed as of March 2026 — this is now a no-op passthrough.
  */
 export function fixBookmakerMarkets(
-  bookmaker: string,
+  _bookmaker: string,
   markets: readonly WsMarket[],
 ): readonly WsMarket[] {
-  if (!BETMGM_SWAP_BOOKMAKERS.has(bookmaker)) return markets;
-  return markets.map((m) => ({
-    ...m,
-    odds: m.odds.map(swapHomeAway),
-  }));
+  return markets;
 }
 
 /**
