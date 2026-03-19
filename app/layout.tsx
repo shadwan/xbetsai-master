@@ -19,8 +19,68 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "xBetsAI",
-  description: "AI-powered sports betting odds comparison and analysis",
+  title: {
+    default: "xBetsAI — AI-Powered Sports Betting Intelligence",
+    template: "%s — xBetsAI",
+  },
+  description:
+    "Compare odds across DraftKings, FanDuel, BetMGM, Bet365 and more. Find smart bets, guaranteed winners, and the best prices — all powered by AI.",
+  keywords: [
+    "sports betting odds comparison",
+    "odds comparison tool",
+    "best sports betting odds",
+    "surebet finder",
+    "guaranteed profit betting",
+    "positive EV betting",
+    "smart betting tool",
+    "player props analytics",
+    "line movement tracker",
+    "DraftKings odds",
+    "FanDuel odds",
+    "BetMGM odds",
+    "Bet365 odds",
+    "AI sports analytics",
+    "sports betting intelligence",
+    "NBA odds",
+    "NFL odds",
+    "MLB odds",
+    "NHL odds",
+    "value bets",
+    "arbitrage betting",
+    "real time odds",
+  ],
+  metadataBase: new URL("https://xbets.ai"),
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://xbets.ai",
+    siteName: "xBetsAI",
+    title: "xBetsAI — Stop Guessing. Let AI Find Your Edge.",
+    description:
+      "Compare odds from every major sportsbook, find bets where the math is in your favor, and spot guaranteed winners. AI-powered sports betting intelligence.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "xBetsAI — AI-Powered Sports Betting Intelligence",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "xBetsAI — Stop Guessing. Let AI Find Your Edge.",
+    description:
+      "Compare odds from every major sportsbook, find smart bets, and spot guaranteed winners. AI-powered sports betting intelligence.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: "https://xbets.ai",
+  },
 };
 
 export default function RootLayout({

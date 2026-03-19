@@ -39,9 +39,12 @@ export default function AdminLayout({
   if (!isAuthenticated || (user && user.role !== "admin")) return null;
 
   return (
-    <div className="flex min-h-screen bg-base">
-      <AdminSidebar />
-      <main className="flex-1 p-8">{children}</main>
-    </div>
+    <>
+      <meta name="robots" content="noindex, nofollow" />
+      <div className="flex min-h-screen bg-base">
+        <AdminSidebar />
+        <main className="flex-1 p-8">{children}</main>
+      </div>
+    </>
   );
 }
