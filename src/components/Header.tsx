@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Separator } from "@/components/ui/separator";
 import { SSEIndicator } from "./SSEIndicator";
 import { UserButton } from "./auth/UserButton";
 
@@ -20,21 +19,6 @@ export function Header() {
               className="h-5 w-auto"
             />
           </Link>
-          <Separator orientation="vertical" className="!h-5 bg-border" />
-          <nav className="flex items-center gap-4">
-            <Link
-              href="/app"
-              className="text-sm text-text-secondary hover:text-neon-cyan transition-colors"
-            >
-              Home
-            </Link>
-            <Link
-              href="/opportunities"
-              className="text-sm text-text-secondary hover:text-neon-cyan transition-colors"
-            >
-              Opportunities
-            </Link>
-          </nav>
         </div>
         <div className="flex items-center gap-3">
           <SSEIndicator />
