@@ -13,6 +13,13 @@ export default defineSchema({
     isAnonymous: v.optional(v.boolean()),
     role: v.optional(v.union(v.literal("user"), v.literal("admin"))),
     createdAt: v.optional(v.number()),
+    // Admin-granted access (bypasses Stripe)
+    manualSubscription: v.optional(v.object({
+      status: v.union(v.literal("active"), v.literal("revoked")),
+      grantedAt: v.number(),
+      grantedBy: v.id("users"),
+      note: v.optional(v.string()),
+    })),
   }).index("email", ["email"]),
 
   emailLogs: defineTable({

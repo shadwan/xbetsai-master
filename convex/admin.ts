@@ -25,6 +25,7 @@ export const dashboardStats = query({
     let trialingSubscriptions = 0;
     let canceledSubscriptions = 0;
     let pastDueSubscriptions = 0;
+    let manualAccessCount = 0;
     let monthlyCount = 0;
     let annualCount = 0;
     let usersWithActiveSub = 0;
@@ -49,7 +50,10 @@ export const dashboardStats = query({
       canceledSubscriptions += subs.filter((s) => s.status === "canceled").length;
       pastDueSubscriptions += subs.filter((s) => s.status === "past_due").length;
 
-      if (activeSubs.length > 0 || trialSubs.length > 0) {
+      const hasManualAccess = user.manualSubscription?.status === "active";
+      if (hasManualAccess) manualAccessCount++;
+
+      if (activeSubs.length > 0 || trialSubs.length > 0 || hasManualAccess) {
         usersWithActiveSub++;
         for (const s of [...activeSubs, ...trialSubs]) {
           if (s.priceId === annualPriceId) annualCount++;
@@ -73,6 +77,7 @@ export const dashboardStats = query({
       recentSignups,
       activeSubscriptions,
       trialingSubscriptions,
+      manualAccessCount,
       canceledSubscriptions,
       pastDueSubscriptions,
       totalSubscriptions,
@@ -168,5 +173,80 @@ export const updateUserRole = mutation({
   handler: async (ctx, args) => {
     await assertAdmin(ctx);
     await ctx.db.patch(args.userId, { role: args.role });
+  },
+});
+
+export const grantManualAccess = mutation({
+  args: {
+    userId: v.id("users"),
+    note: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const admin = await assertAdmin(ctx);
+    await ctx.db.patch(args.userId, {
+      manualSubscription: {
+        status: "active",
+        grantedAt: Date.now(),
+        grantedBy: admin._id,
+        note: args.note,
+      },
+    });
+  },
+});
+
+export const revokeManualAccess = mutation({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    await assertAdmin(ctx);
+    const user = await ctx.db.get(args.userId);
+    if (!user?.manualSubscription) return;
+    await ctx.db.patch(args.userId, {
+      manualSubscription: {
+        ...user.manualSubscription,
+        status: "revoked",
+      },
+    });
+  },
+});
+
+export const createManualUser = mutation({
+  args: {
+    email: v.string(),
+    name: v.optional(v.string()),
+    grantAccess: v.boolean(),
+    note: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const admin = await assertAdmin(ctx);
+
+    // Check if email already exists
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.email))
+      .first();
+    if (existing) {
+      throw new Error("A user with this email already exists");
+    }
+
+    const userId = await ctx.db.insert("users", {
+      email: args.email,
+      name: args.name,
+      role: "user",
+      createdAt: Date.now(),
+      ...(args.grantAccess
+        ? {
+            manualSubscription: {
+              status: "active" as const,
+              grantedAt: Date.now(),
+              grantedBy: admin._id,
+              note: args.note,
+            },
+          }
+        : {}),
+    });
+
+    return userId;
   },
 });

@@ -24,10 +24,13 @@ export const currentUser = query({
         (s.status === "canceled" && s.currentPeriodEnd > Date.now())
     );
 
+    const hasManualAccess =
+      user.manualSubscription?.status === "active";
+
     return {
       ...user,
       subscription: activeSubscription ?? subscriptions[0] ?? null,
-      hasActiveSubscription: !!activeSubscription,
+      hasActiveSubscription: !!activeSubscription || hasManualAccess,
     };
   },
 });

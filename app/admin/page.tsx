@@ -12,6 +12,7 @@ import {
   CalendarClock,
   XCircle,
   Clock,
+  Gift,
 } from "lucide-react";
 
 function StatCard({
@@ -89,7 +90,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Subscription breakdown */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <StatCard
           label="Active (Paid)"
           value={stats.activeSubscriptions}
@@ -106,6 +107,12 @@ export default function AdminDashboard() {
           value={`${stats.monthlyCount}mo / ${stats.annualCount}yr`}
           icon={CalendarClock}
           subtitle={`${stats.monthlyCount} monthly, ${stats.annualCount} annual`}
+        />
+        <StatCard
+          label="Manual Access"
+          value={stats.manualAccessCount}
+          icon={Gift}
+          subtitle="Admin-granted"
         />
         <StatCard
           label="Canceled"
