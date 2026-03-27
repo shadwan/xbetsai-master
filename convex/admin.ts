@@ -22,6 +22,7 @@ export const dashboardStats = query({
 
     let totalSubscriptions = 0;
     let activeSubscriptions = 0;
+    let trialingSubscriptions = 0;
     let canceledSubscriptions = 0;
     let pastDueSubscriptions = 0;
     let monthlyCount = 0;
@@ -42,22 +43,26 @@ export const dashboardStats = query({
       totalSubscriptions += subs.length;
 
       const activeSubs = subs.filter((s) => s.status === "active");
+      const trialSubs = subs.filter((s) => s.status === "trialing");
       activeSubscriptions += activeSubs.length;
+      trialingSubscriptions += trialSubs.length;
       canceledSubscriptions += subs.filter((s) => s.status === "canceled").length;
       pastDueSubscriptions += subs.filter((s) => s.status === "past_due").length;
 
-      if (activeSubs.length > 0) {
+      if (activeSubs.length > 0 || trialSubs.length > 0) {
         usersWithActiveSub++;
-        for (const s of activeSubs) {
+        for (const s of [...activeSubs, ...trialSubs]) {
           if (s.priceId === annualPriceId) annualCount++;
           else if (s.priceId === monthlyPriceId) monthlyCount++;
-          else monthlyCount++; // default to monthly
+          else monthlyCount++;
         }
       }
     }
 
+    // MRR only counts active (paid), not trialing
+    const paidMonthly = monthlyCount - trialingSubscriptions;
     const estimatedMRR =
-      monthlyCount * 14.99 + annualCount * (100 / 12);
+      Math.max(0, paidMonthly) * 14.99 + annualCount * (100 / 12);
     const conversionRate =
       users.length > 0
         ? Math.round((usersWithActiveSub / users.length) * 100)
@@ -67,6 +72,7 @@ export const dashboardStats = query({
       totalUsers: users.length,
       recentSignups,
       activeSubscriptions,
+      trialingSubscriptions,
       canceledSubscriptions,
       pastDueSubscriptions,
       totalSubscriptions,

@@ -33,7 +33,7 @@ export function LandingNav() {
             href="/sign-up"
             className="rounded-lg bg-neon-gold px-4 py-2 text-sm font-bold text-[#0a0f18] transition-all hover:brightness-110"
           >
-            Get Started &rarr;
+            Free Trial &rarr;
           </Link>
         </div>
       </div>

@@ -20,6 +20,7 @@ export const currentUser = query({
     const activeSubscription = subscriptions.find(
       (s) =>
         s.status === "active" ||
+        s.status === "trialing" ||
         (s.status === "canceled" && s.currentPeriodEnd > Date.now())
     );
 

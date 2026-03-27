@@ -24,7 +24,7 @@ export function LandingCTA() {
                 href="/sign-up"
                 className="inline-block rounded-xl bg-neon-gold px-10 py-4 text-base font-bold text-[#0a0f18] shadow-[0_0_30px_rgba(241,225,133,0.2)] transition-all hover:shadow-[0_0_40px_rgba(241,225,133,0.35)] hover:brightness-110"
               >
-                Sign Up Now &rarr;
+                Start 7-Day Free Trial &rarr;
               </Link>
             </div>
           </div>

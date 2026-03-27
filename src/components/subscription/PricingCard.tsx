@@ -70,7 +70,10 @@ function SingleCard({
           </p>
         )}
 
-        <p className="mt-2 text-sm text-text-secondary">
+        <p className="mt-2 text-sm font-medium text-neon-gold">
+          7-day free trial
+        </p>
+        <p className="mt-1 text-sm text-text-secondary">
           Full access to all xBetsAI features
         </p>
       </div>
@@ -95,7 +98,7 @@ function SingleCard({
       >
         {loading
           ? "Redirecting…"
-          : `Subscribe — ${isAnnual ? "$100/yr" : "$14.99/mo"}`}
+          : `Start Free Trial — ${isAnnual ? "$100/yr" : "$14.99/mo"}`}
       </Button>
     </div>
   );

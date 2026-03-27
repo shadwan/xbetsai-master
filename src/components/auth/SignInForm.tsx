@@ -69,7 +69,9 @@ export function SignInForm() {
       await signIn("password", { email, flow: "reset" });
       setStep("reset-code");
     } catch {
-      setError("Failed to send reset code. Please try again.");
+      setError(
+        "No password account found for this email. If you signed up with a magic link, use \"Sign in with Magic Link\" instead."
+      );
     } finally {
       setLoading(false);
     }

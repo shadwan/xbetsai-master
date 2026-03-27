@@ -11,6 +11,7 @@ import {
   Percent,
   CalendarClock,
   XCircle,
+  Clock,
 } from "lucide-react";
 
 function StatCard({
@@ -88,11 +89,17 @@ export default function AdminDashboard() {
       </div>
 
       {/* Subscription breakdown */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
-          label="Active Subscriptions"
+          label="Active (Paid)"
           value={stats.activeSubscriptions}
           icon={CreditCard}
+        />
+        <StatCard
+          label="Trialing"
+          value={stats.trialingSubscriptions}
+          icon={Clock}
+          subtitle="7-day free trial"
         />
         <StatCard
           label="Plan Breakdown"

@@ -6,8 +6,10 @@ import { StripeSubscriptions } from "@convex-dev/stripe";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api } from "./_generated/api";
 import { v } from "convex/values";
+import Stripe from "stripe";
 
 const stripeClient = new StripeSubscriptions(components.stripe, {});
+const TRIAL_DAYS = 7;
 
 export const createCheckoutSession = action({
   args: { plan: v.union(v.literal("monthly"), v.literal("annual")) },
@@ -23,19 +25,33 @@ export const createCheckoutSession = action({
         ? process.env.STRIPE_ANNUAL_PRICE_ID!
         : process.env.STRIPE_PRO_PRICE_ID!;
 
+    // Use stripeClient for customer management (keeps component in sync)
     const customer = await stripeClient.getOrCreateCustomer(ctx, {
       userId: userId,
       email: user.email ?? undefined,
       name: user.name ?? undefined,
     });
 
-    const session = await stripeClient.createCheckoutSession(ctx, {
-      priceId,
-      customerId: customer.customerId,
+    // Only give trial to first-time subscribers
+    const existingSubs = await ctx.runQuery(
+      components.stripe.public.listSubscriptionsByUserId,
+      { userId }
+    );
+    const isFirstSubscription = existingSubs.length === 0;
+
+    // Use Stripe SDK directly for checkout (wrapper doesn't support trial_period_days)
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/app?checkout=success`,
-      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/subscribe?checkout=canceled`,
-      subscriptionMetadata: { userId: userId },
+      customer: customer.customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/app?checkout=success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscribe?checkout=canceled`,
+      subscription_data: {
+        metadata: { userId },
+        ...(isFirstSubscription ? { trial_period_days: TRIAL_DAYS } : {}),
+      },
+      metadata: { userId },
     });
 
     return session.url!;

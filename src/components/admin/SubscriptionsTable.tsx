@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
 
-type StatusFilter = "all" | "active" | "canceled" | "past_due";
+type StatusFilter = "all" | "active" | "trialing" | "canceled" | "past_due";
 
 export function SubscriptionsTable() {
   const subscriptions = useQuery(api.admin.listSubscriptions);
@@ -50,9 +50,10 @@ export function SubscriptionsTable() {
   }, [subscriptions, search, statusFilter]);
 
   const statusCounts = useMemo(() => {
-    if (!subscriptions) return { active: 0, canceled: 0, past_due: 0 };
+    if (!subscriptions) return { active: 0, trialing: 0, canceled: 0, past_due: 0 };
     return {
       active: subscriptions.filter((s) => s.status === "active").length,
+      trialing: subscriptions.filter((s) => s.status === "trialing").length,
       canceled: subscriptions.filter((s) => s.status === "canceled").length,
       past_due: subscriptions.filter((s) => s.status === "past_due").length,
     };
@@ -96,6 +97,8 @@ export function SubscriptionsTable() {
     switch (status) {
       case "active":
         return "default" as const;
+      case "trialing":
+        return "secondary" as const;
       case "past_due":
         return "destructive" as const;
       default:
@@ -107,6 +110,7 @@ export function SubscriptionsTable() {
     [
       { label: "All", value: "all", count: subscriptions.length },
       { label: "Active", value: "active", count: statusCounts.active },
+      { label: "Trialing", value: "trialing", count: statusCounts.trialing },
       { label: "Canceled", value: "canceled", count: statusCounts.canceled },
       { label: "Past Due", value: "past_due", count: statusCounts.past_due },
     ];
