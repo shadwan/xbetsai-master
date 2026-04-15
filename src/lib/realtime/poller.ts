@@ -4,6 +4,7 @@
 
 import { oddsClient } from "@/src/lib/odds-api/client";
 import * as cache from "@/src/lib/cache/store";
+import { checkBookmakerChange } from "@/src/lib/cache/store";
 import { emit } from "@/src/lib/realtime/bus";
 import { getWSStatus } from "@/src/lib/realtime/ws-client";
 import {
@@ -688,6 +689,37 @@ export async function fetchOddsMovement(eventId: string): Promise<EventOddsMovem
   return result;
 }
 
+// ── Bookmaker sync ──────────────────────────────────────────────────────
+
+/** Ensure odds-api.io account has the correct bookmakers selected. */
+async function syncSelectedBookmakers(): Promise<void> {
+  try {
+    const selected = await oddsClient.getSelectedBookmakers();
+    const selectedNames = new Set(
+      selected.map((b: { name?: string }) => b.name ?? String(b))
+    );
+    const desired = new Set<string>(BOOKMAKERS);
+
+    // Check if they match
+    const needsSync =
+      selectedNames.size !== desired.size ||
+      [...desired].some((b) => !selectedNames.has(b));
+
+    if (!needsSync) {
+      console.log("[poller] Bookmakers in sync:", [...desired].join(", "));
+      return;
+    }
+
+    console.log(
+      `[poller] Syncing bookmakers: ${[...selectedNames].join(", ")} → ${[...desired].join(", ")}`
+    );
+    await oddsClient.selectBookmakers(BOOKMAKERS_PARAM);
+    console.log("[poller] Bookmakers synced successfully");
+  } catch (err) {
+    console.warn("[poller] Failed to sync bookmakers:", (err as Error).message);
+  }
+}
+
 // ── Public API ───────────────────────────────────────────────────────────
 
 export async function startPollers(): Promise<void> {
@@ -695,6 +727,12 @@ export async function startPollers(): Promise<void> {
   running = true;
 
   try {
+    // 0a. Sync selected bookmakers with odds-api.io account
+    await syncSelectedBookmakers();
+
+    // 0b. Check if bookmakers config changed — clear stale odds if so
+    checkBookmakerChange(BOOKMAKERS);
+
     // 1. Static data
     await fetchSportsAndLeagues();
 

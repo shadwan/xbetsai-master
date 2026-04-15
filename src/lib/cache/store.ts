@@ -186,6 +186,57 @@ export function clear(): void {
   }
 }
 
+/** Clear all odds and value/arb bet cache entries (keeps events, sports, etc.). */
+export function clearOdds(): number {
+  let removed = 0;
+  for (const key of [...store.keys()]) {
+    if (
+      key.startsWith("odds:") ||
+      key.startsWith("value-bets:") ||
+      key === "arb-bets" ||
+      key.startsWith("props:") ||
+      key.startsWith("historical:") ||
+      key.startsWith("movement:")
+    ) {
+      store.delete(key);
+      removed++;
+    }
+  }
+  return removed;
+}
+
+/**
+ * Check if bookmakers config has changed since last startup.
+ * If changed, clears all odds data so stale bookmaker entries don't linger.
+ * Returns true if a reset was performed.
+ */
+export function checkBookmakerChange(currentBookmakers: readonly string[]): boolean {
+  const fingerprint = currentBookmakers.slice().sort().join(",");
+  const cacheKey = "__bookmakers_fingerprint";
+  const existing = store.get(cacheKey) as CacheEntry<string> | undefined;
+
+  if (existing && existing.data === fingerprint) {
+    return false; // same config, no reset needed
+  }
+
+  if (existing) {
+    console.log(
+      `[cache] Bookmakers changed: "${existing.data}" → "${fingerprint}" — clearing odds cache`
+    );
+    const removed = clearOdds();
+    console.log(`[cache] Cleared ${removed} odds cache entries`);
+  }
+
+  // Store fingerprint with a very long TTL (effectively permanent until restart)
+  store.set(cacheKey, {
+    data: fingerprint,
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
+  });
+
+  return !!existing;
+}
+
 // ── Consolidation helpers ───────────────────────────────────────────────
 
 export function getConsolidatedEvent(

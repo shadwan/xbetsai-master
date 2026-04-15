@@ -21,7 +21,7 @@ export const BOOKMAKERS = [
   "Bet365",
   "DraftKings",
   "FanDuel",
-  "Unibet",
+  "Hard Rock",
   "BetMGM",
 ] as const;
 
